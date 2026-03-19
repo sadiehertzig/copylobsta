@@ -1,0 +1,36 @@
+{
+  "totals": {
+    "input_tokens": 268858,
+    "output_tokens": 80689,
+    "total_tokens": 382506,
+    "calls": 214
+  },
+  "components": {
+    "question_gen": {
+      "input_tokens": 36956,
+      "output_tokens": 21041,
+      "total_tokens": 66040,
+      "calls": 7
+    },
+    "runner": {
+      "input_tokens": 13918,
+      "output_tokens": 14892,
+      "total_tokens": 28810,
+      "calls": 30
+    },
+    "grader": {
+      "input_tokens": 213219,
+      "output_tokens": 43547,
+      "total_tokens": 281682,
+      "calls": 175
+    },
+    "improver": {
+      "input_tokens": 4765,
+      "output_tokens": 1209,
+      "total_tokens": 5974,
+      "calls": 2
+    }
+  },
+  "by_model": {},
+  "updated_at": "2026-03-19T21:01:30.041928+00:00"
+}

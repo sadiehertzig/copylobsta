@@ -8,12 +8,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 import json
 
+from security import atomic_write_json, atomic_write_text, clamp_int
+
 
 # ─────────────────────────────────────────────────────────
 # Shared constants
 # ─────────────────────────────────────────────────────────
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
+MIN_MAX_ITERATIONS = 1
+MAX_MAX_ITERATIONS = 50
+MIN_TOKEN_BUDGET = 50_000
+MAX_TOKEN_BUDGET = 5_000_000
 
 
 # ─────────────────────────────────────────────────────────
@@ -45,16 +51,13 @@ def _strip_markdown_fences(text: str) -> str:
 
 
 def parse_json_obj(text: str) -> dict | None:
-    """Extract a JSON object from model output. Returns dict or None."""
+    """Extract a strict JSON object from model output. Returns dict or None."""
     text = _strip_markdown_fences(text)
     try:
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        if start >= 0 and end > start:
-            return json.loads(text[start:end])
+        parsed = json.loads(text)
     except json.JSONDecodeError:
-        pass
-    return None
+        return None
+    return parsed if isinstance(parsed, dict) else None
 
 
 def parse_json_array(text: str) -> list:
@@ -216,6 +219,13 @@ class AutoImproveConfig:
     max_iterations: int = 15
     token_budget: int = 1_000_000
 
+    def enforce_bounds(self):
+        self.max_iterations = clamp_int(self.max_iterations, MIN_MAX_ITERATIONS, MAX_MAX_ITERATIONS)
+        if self.token_budget <= 0:
+            self.token_budget = 0
+        else:
+            self.token_budget = clamp_int(self.token_budget, MIN_TOKEN_BUDGET, MAX_TOKEN_BUDGET)
+
     def to_program_md(self) -> str:
         """Serialize config to program.md format."""
         lines = [
@@ -265,7 +275,8 @@ class AutoImproveConfig:
         return "\n".join(lines)
 
     def save(self, path: str):
-        Path(path).write_text(self.to_program_md())
+        self.enforce_bounds()
+        atomic_write_text(Path(path), self.to_program_md())
 
     @classmethod
     def load(cls, path: str) -> "AutoImproveConfig":
@@ -371,6 +382,7 @@ class AutoImproveConfig:
                     )
                     break
 
+        config.enforce_bounds()
         return config
 
 
@@ -387,9 +399,7 @@ def load_test_bank(path: str) -> list:
 
 
 def save_test_bank(bank: list, path: str):
-    Path(path).write_text(json.dumps(
-        [tc.to_dict() for tc in bank], indent=2
-    ))
+    atomic_write_json(Path(path), [tc.to_dict() for tc in bank])
 
 
 # ─────────────────────────────────────────────────────────
@@ -407,7 +417,7 @@ class ResultsLogger:
     def __init__(self, path: str):
         self.path = Path(path)
         if not self.path.exists():
-            self.path.write_text(self.HEADER)
+            atomic_write_text(self.path, self.HEADER)
 
     def log(self, description, agg_before, agg_after, kept, reason,
             worst_tid="", worst_score=0.0):

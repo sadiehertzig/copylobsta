@@ -24,6 +24,7 @@ _SELF_DIR = Path(__file__).resolve().parent
 if str(_SELF_DIR) not in sys.path:
     sys.path.insert(0, str(_SELF_DIR))
 from pathing import resolve_autoimprove_dir, resolve_skills_dir
+from security import atomic_write_json, atomic_write_text, validate_existing_path
 
 _SKILLS_DIR = resolve_skills_dir(_SELF_DIR)
 _AUTOIMPROVE_DIR = resolve_autoimprove_dir(_SELF_DIR)
@@ -51,6 +52,29 @@ from improver import Improver
 from notify import TelegramApproval, apply_approved_skill, discard_proposed_skill
 
 TARGETS_DIR = _AUTOIMPROVE_DIR / "targets"
+
+
+def _allowed_skill_roots() -> list[Path]:
+    roots = [_SKILLS_DIR]
+    env_root = os.environ.get("OPENCLAW_SKILLS_DIR", "").strip()
+    if env_root:
+        roots.append(Path(env_root))
+    return roots
+
+
+def _validated_skill_md(path_like: str | Path, allow_tmp: bool = False) -> Path | None:
+    safe = validate_existing_path(
+        path_like,
+        allowed_roots=_allowed_skill_roots(),
+        allowed_suffixes=(".md",),
+    )
+    if safe is not None:
+        return safe
+    if allow_tmp:
+        tmp_safe = validate_existing_path(path_like, [Path("/tmp")], allowed_suffixes=(".md",))
+        if tmp_safe is not None and tmp_safe.name.startswith("autoimprove_"):
+            return tmp_safe
+    return None
 
 
 class AutoImprove:
@@ -134,7 +158,7 @@ class AutoImprove:
         return state
 
     def _save_usage_state(self):
-        self.usage_path().write_text(json.dumps(self._usage_state, indent=2))
+        atomic_write_json(self.usage_path(), self._usage_state)
 
     def _track_usage(self, raw_usage: dict | None, component: str):
         if not isinstance(raw_usage, dict):
@@ -223,9 +247,7 @@ class AutoImprove:
         return {}
 
     def save_grade_cache(self, cache: dict):
-        self.grade_cache_path().write_text(
-            json.dumps({"version": 1, "items": cache}, indent=2)
-        )
+        atomic_write_json(self.grade_cache_path(), {"version": 1, "items": cache})
 
     async def _grade_with_cache(self, grader: Grader, responses: list,
                                 skill_summary: str, config: AutoImproveConfig,
@@ -294,10 +316,13 @@ class AutoImprove:
 
     async def run_interview_cli(self, skill_path: str):
         """Interactive CLI interview."""
-        content = Path(skill_path).read_text()
-        name = Path(skill_path).parent.name
+        safe_skill_path = _validated_skill_md(skill_path)
+        if safe_skill_path is None:
+            raise ValueError(f"Unsafe or missing skill_path: {skill_path}")
+        content = safe_skill_path.read_text()
+        name = safe_skill_path.parent.name
 
-        engine = InterviewEngine(name, content, skill_path)
+        engine = InterviewEngine(name, content, str(safe_skill_path))
 
         while not engine.is_complete():
             prompt = engine.get_next_prompt()
@@ -330,7 +355,11 @@ class AutoImprove:
 
     async def generate_questions(self):
         config = self.load_config()
-        content = Path(config.skill_path).read_text()
+        safe_skill_path = _validated_skill_md(config.skill_path)
+        if safe_skill_path is None:
+            raise ValueError(f"Unsafe or missing skill_path in config: {config.skill_path}")
+        config.skill_path = str(safe_skill_path)
+        content = safe_skill_path.read_text()
 
         self._log("Convening Three-Body Council for test questions...")
         gen = QuestionGenerator(verbose=self.verbose)
@@ -349,8 +378,12 @@ class AutoImprove:
 
     async def run_baseline(self):
         config = self.load_config()
+        safe_skill_path = _validated_skill_md(config.skill_path)
+        if safe_skill_path is None:
+            raise ValueError(f"Unsafe or missing skill_path in config: {config.skill_path}")
+        config.skill_path = str(safe_skill_path)
         bank = self.load_bank()
-        content = Path(config.skill_path).read_text()
+        content = safe_skill_path.read_text()
 
         self._log(f"Baseline: {len(bank)} questions...")
         responses = await self.runner.run_batch(content, bank, config.mode,
@@ -390,8 +423,12 @@ class AutoImprove:
 
     async def run_loop(self, max_iters: int = None):
         config = self.load_config()
+        safe_skill_path = _validated_skill_md(config.skill_path, allow_tmp=True)
+        if safe_skill_path is None:
+            raise ValueError(f"Unsafe or missing skill_path in config: {config.skill_path}")
+        config.skill_path = str(safe_skill_path)
         bank = self.load_bank()
-        skill_content = Path(config.skill_path).read_text()
+        skill_content = safe_skill_path.read_text()
 
         ratchet = Ratchet(config.repo_path, config.skill_path)
         grader = Grader(verbose=False)
@@ -594,7 +631,7 @@ class AutoImprove:
                 self._log(f"  KEPT ({prev_agg:.3f} -> {new_agg:.3f})")
             else:
                 # Restore the known-good content to disk (works with or without git)
-                Path(config.skill_path).write_text(skill_content)
+                atomic_write_text(Path(config.skill_path), skill_content)
                 ratchet.revert()
                 self.logger.log(desc, prev_agg, new_agg, False, reason, w_tid, w_sc)
                 # Record rich revert info for the improver (Fix 1)
@@ -655,9 +692,11 @@ class AutoImprove:
         Requires interview + generate to have been run first.
         """
         config = self.load_config()
-        if not config.skill_path or not Path(config.skill_path).exists():
-            self._log("No config found. Run 'interview' and 'generate' first.")
+        safe_original_path = _validated_skill_md(config.skill_path)
+        if safe_original_path is None:
+            self._log("No valid config found. Run 'interview' and 'generate' first.")
             return
+        config.skill_path = str(safe_original_path)
 
         bank = self.load_bank()
         if not bank:
@@ -877,8 +916,7 @@ def _read_json_file(path: Path, default):
 
 
 def _write_json_file(path: Path, payload):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2))
+    atomic_write_json(path, payload)
 
 
 def _context_value(context, key: str):
@@ -949,10 +987,11 @@ def _resolve_skill_match(hint: str) -> tuple[str, Path, str] | None:
         candidate = direct_path
         if candidate.is_dir():
             candidate = candidate / "SKILL.md"
-        if candidate.exists() and candidate.name.lower().endswith(".md"):
-            name = candidate.parent.name
-            content = candidate.read_text()
-            return name, candidate, content
+        safe_candidate = _validated_skill_md(candidate)
+        if safe_candidate is not None:
+            name = safe_candidate.parent.name
+            content = safe_candidate.read_text()
+            return name, safe_candidate, content
 
     hint_l = raw_hint.lower()
     if not _SKILLS_DIR.exists():
@@ -963,8 +1002,9 @@ def _resolve_skill_match(hint: str) -> tuple[str, Path, str] | None:
         if not d.is_dir():
             continue
         md = d / "SKILL.md"
-        if md.exists():
-            candidates.append((d.name, md))
+        safe_md = _validated_skill_md(md)
+        if safe_md is not None:
+            candidates.append((d.name, safe_md))
 
     for name, md in candidates:
         if name.lower() == hint_l:
@@ -1094,20 +1134,21 @@ async def handle_skill_request(user_input: str, context=None):
         skill_path = str(active.get("skill_path", "")).strip()
         skill_name = str(active.get("skill_name", "")).strip()
         target_name = str(active.get("target_name", skill_name)).strip() or skill_name
-        if not skill_path or not Path(skill_path).exists():
+        safe_skill_path = _validated_skill_md(skill_path)
+        if safe_skill_path is None:
             sessions.pop(session_id, None)
             _save_sessions(sessions)
             return "Interview context expired (skill file missing). Say 'improve [skill]' to restart."
 
-        content = Path(skill_path).read_text()
-        engine = _hydrate_interview(active, skill_name, content, skill_path)
+        content = safe_skill_path.read_text()
+        engine = _hydrate_interview(active, skill_name, content, str(safe_skill_path))
         result = engine.process_response(user_input.strip())
 
         if result == "confirm_program_revision":
             sessions[session_id] = {
                 "skill_name": skill_name,
                 "target_name": target_name,
-                "skill_path": skill_path,
+                "skill_path": str(safe_skill_path),
                 **_serialize_interview(engine),
             }
             _save_sessions(sessions)
@@ -1135,7 +1176,7 @@ async def handle_skill_request(user_input: str, context=None):
         sessions[session_id] = {
             "skill_name": skill_name,
             "target_name": target_name,
-            "skill_path": skill_path,
+            "skill_path": str(safe_skill_path),
             **_serialize_interview(engine),
         }
         _save_sessions(sessions)
@@ -1246,7 +1287,10 @@ def main():
     args = parser.parse_args()
 
     if args.cmd == "interview":
-        asyncio.run(AutoImprove(args.target or Path(args.skill).parent.name).run_interview_cli(args.skill))
+        safe_cli_skill = _validated_skill_md(args.skill)
+        if safe_cli_skill is None:
+            raise SystemExit("Rejected unsafe or invalid --skill path")
+        asyncio.run(AutoImprove(args.target or safe_cli_skill.parent.name).run_interview_cli(str(safe_cli_skill)))
     elif args.cmd == "generate":
         asyncio.run(AutoImprove(args.target).generate_questions())
     elif args.cmd == "baseline":

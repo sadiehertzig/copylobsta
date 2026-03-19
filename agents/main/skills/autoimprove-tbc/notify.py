@@ -17,6 +17,7 @@ _SELF_DIR = Path(__file__).resolve().parent
 if str(_SELF_DIR) not in sys.path:
     sys.path.insert(0, str(_SELF_DIR))
 from pathing import resolve_autoimprove_dir
+from security import atomic_write_text
 
 _AUTOIMPROVE_DIR = resolve_autoimprove_dir(_SELF_DIR)
 _ENV_FILE = Path.home() / ".openclaw" / ".env"
@@ -174,7 +175,13 @@ def make_diff_summary(original: str, modified: str, skill_name: str) -> str:
 
 def _escape_html(text: str) -> str:
     """Escape HTML special chars for Telegram."""
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
+    )
 
 
 class TelegramApproval:
@@ -287,7 +294,7 @@ class TelegramApproval:
                     updates = resp.json().get("result", [])
                     for update in updates:
                         offset = update["update_id"] + 1
-                        offset_file.write_text(str(offset))
+                        atomic_write_text(offset_file, str(offset))
 
                         cb = update.get("callback_query", {})
                         data = cb.get("data", "")
@@ -337,7 +344,7 @@ def apply_approved_skill(original_path: str, improved_path: str,
         return False
 
     # Copy improved over original
-    original.write_text(improved.read_text())
+    atomic_write_text(original, improved.read_text())
 
     # Delete temp
     improved.unlink()

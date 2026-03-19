@@ -1,0 +1,408 @@
+[
+  {
+    "id": "tq-a-001",
+    "question": "Please help me improve this intro paragraph. The prompt is 'Discuss the impact of the Industrial Revolution on workers.' Here's what I wrote: 'The industrial revolution was a time of big changes. It started in england and then went to other places. Many factories were built and people moved to cities to work in them. It was good but also bad for workers.'",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "basic_polish",
+    "difficulty": "easy",
+    "key_assertions": [
+      "Provides a one-sentence overall diagnosis",
+      "Lists 3-5 high-impact improvements"
+    ],
+    "anti_assertions": [
+      "Does not rewrite the entire essay"
+    ],
+    "rubric": [
+      {
+        "criterion": "Includes exactly one sentence for overall diagnosis",
+        "weight": "high"
+      },
+      {
+        "criterion": "Lists 3 to 5 clear, actionable improvements",
+        "weight": "high"
+      },
+      {
+        "criterion": "Provides exactly one example paragraph rewrite",
+        "weight": "high"
+      },
+      {
+        "criterion": "Tone is conversational and sounds human",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": true
+  },
+  {
+    "id": "tq-a-002",
+    "question": "My teacher says I have run-on sentences. Can you help me fix this? 'Gatsby threw huge parties because he wanted Daisy to notice him and he bought a giant house right across the bay from hers so he could stare at the green light and hope she would wander over one day.' The prompt is 'Analyze Gatsby's motivation in The Great Gatsby.'",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "run_on_correction",
+    "difficulty": "easy",
+    "key_assertions": [
+      "Identifies and explains the run-on sentence",
+      "Example rewrite varies sentence length"
+    ],
+    "anti_assertions": [
+      "Uses a robotic or checklist-style tone"
+    ],
+    "rubric": [
+      {
+        "criterion": "Specifically flags the run-on sentence issue",
+        "weight": "high"
+      },
+      {
+        "criterion": "Example rewrite mixes short punchy and longer sentences",
+        "weight": "high"
+      },
+      {
+        "criterion": "Preserves the student's original meaning and voice",
+        "weight": "medium"
+      },
+      {
+        "criterion": "Feedback sounds like a real person giving advice",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": true
+  },
+  {
+    "id": "tq-a-003",
+    "question": "Here's my thesis for my history essay: 'World War 1 was caused by a lot of different things like alliances and imperialism and the assassination of Archduke Ferdinand.' How can I make it stronger?",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "thesis_improvement",
+    "difficulty": "easy",
+    "key_assertions": [
+      "Suggests making the thesis more specific or arguable",
+      "Provides at least one example of a stronger thesis"
+    ],
+    "anti_assertions": [
+      "Does not rewrite a full essay"
+    ],
+    "rubric": [
+      {
+        "criterion": "Identifies vagueness in the original thesis",
+        "weight": "high"
+      },
+      {
+        "criterion": "Suggested thesis is specific and arguable",
+        "weight": "high"
+      },
+      {
+        "criterion": "Language matches high school level",
+        "weight": "medium"
+      },
+      {
+        "criterion": "Preserves the student's topic and intent",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": true
+  },
+  {
+    "id": "tq-a-004",
+    "question": "Can you help me polish this body paragraph? 'The New Deal helped a lot of people get jobs. The CCC put young men to work in forests. The WPA built roads and schools. This was important for the economy.'",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "missing_context",
+    "difficulty": "medium",
+    "key_assertions": [
+      "Asks the user for the assignment prompt or rubric",
+      "Does not fabricate feedback criteria without the prompt"
+    ],
+    "anti_assertions": [
+      "Provides the full 4-part evaluation immediately"
+    ],
+    "rubric": [
+      {
+        "criterion": "Requests the assignment prompt or rubric before proceeding",
+        "weight": "high"
+      },
+      {
+        "criterion": "Does not hallucinate generic grading criteria",
+        "weight": "high"
+      },
+      {
+        "criterion": "Politely explains why the prompt is needed",
+        "weight": "medium"
+      },
+      {
+        "criterion": "Tone is friendly and encouraging",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": false
+  },
+  {
+    "id": "tq-a-005",
+    "question": "Here's my body paragraph for history. The prompt is 'Evaluate the Treaty of Versailles as a cause of WWII.' My paragraph: 'The Treaty of Versailles caused World War II because it was harsh on Germany. Germany had to pay reparations and lost territory. This made Germans angry. Hitler used this anger to gain power and he promised to restore Germany to its former glory and he said the treaty was unfair and he blamed other groups for Germany's problems and eventually he started the war.' Please help with structure and evidence. Also don't make it sound too fancy, I want it to still sound like me.",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "structure_evidence_voice",
+    "difficulty": "medium",
+    "key_assertions": [
+      "Identifies the run-on in the last sentence",
+      "Suggests adding specific historical evidence"
+    ],
+    "anti_assertions": [
+      "Does not use SAT-level vocabulary the student didn't use"
+    ],
+    "rubric": [
+      {
+        "criterion": "Flags the run-on and suggests breaking it up",
+        "weight": "high"
+      },
+      {
+        "criterion": "Recommends specific historical evidence to add",
+        "weight": "high"
+      },
+      {
+        "criterion": "Preserves the student's casual voice and word choices",
+        "weight": "high"
+      },
+      {
+        "criterion": "Example rewrite mixes short and long sentences",
+        "weight": "medium"
+      },
+      {
+        "criterion": "Suggests improved paragraph structure",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": true
+  },
+  {
+    "id": "tq-a-006",
+    "question": "My teacher says my essay has bad transitions. Here are my topic sentences: 1) 'First, Romeo and Juliet shows that love is powerful.' 2) 'Also, the play shows that family feuds are destructive.' 3) 'In conclusion, Shakespeare teaches us many lessons.' The prompt is 'Analyze how Shakespeare explores conflict in Romeo and Juliet.' How do I fix the transitions?",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "transition_help",
+    "difficulty": "medium",
+    "key_assertions": [
+      "Suggests replacing generic transitions with content-linked ones",
+      "Provides at least one example rewritten topic sentence"
+    ],
+    "anti_assertions": [
+      "Does not rewrite all three paragraphs fully"
+    ],
+    "rubric": [
+      {
+        "criterion": "Explains why current transitions are weak",
+        "weight": "high"
+      },
+      {
+        "criterion": "Provides example of a stronger, content-linked transition",
+        "weight": "high"
+      },
+      {
+        "criterion": "Advice is actionable and specific to this essay",
+        "weight": "medium"
+      },
+      {
+        "criterion": "Tone is encouraging, not condescending",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": true
+  },
+  {
+    "id": "tq-a-007",
+    "question": "Prompt: Evaluate the themes of 1984. Here's my sentence: 'Orwell utilizes Winston's cognitive dissonance to elucidate the deleterious ramifications of totalitarian surveillance state apparatuses on individual autonomy. Furthermore, the author's utilization of symbolism vis-a-vis the aforementioned characterization substantiates the hypothesis that ethical paradigms are fundamentally subjective.' Is this good?",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "pretentious_overcorrection",
+    "difficulty": "hard",
+    "key_assertions": [
+      "Identifies that the vocabulary is overblown or unclear",
+      "Suggests clearer, simpler phrasing"
+    ],
+    "anti_assertions": [
+      "Does not mirror or escalate the pretentious vocabulary"
+    ],
+    "rubric": [
+      {
+        "criterion": "Gently flags that complex words obscure meaning",
+        "weight": "high"
+      },
+      {
+        "criterion": "Example rewrite uses clear, natural language",
+        "weight": "high"
+      },
+      {
+        "criterion": "Preserves the student's analytical ideas",
+        "weight": "medium"
+      },
+      {
+        "criterion": "Tone is kind and does not mock the student",
+        "weight": "high"
+      },
+      {
+        "criterion": "Does not simply praise the vocabulary",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": true
+  },
+  {
+    "id": "tq-a-008",
+    "question": "Prompt: Causes of the Civil War. 'slavery was bad and the south wanted it but the north didnt and Abraham Lincoln got elected which made the south mad so they left the union and started their own country and then they attacked fort sumter and the war started it was very bloody and lots of people died on both sides and it lasted four years and in the end the north won and slavery was abolished'",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "severely_broken_writing",
+    "difficulty": "hard",
+    "key_assertions": [
+      "Identifies the entire text as a massive run-on",
+      "Suggests breaking ideas into distinct paragraphs with an outline"
+    ],
+    "anti_assertions": [
+      "Does not rewrite the entire submitted text"
+    ],
+    "rubric": [
+      {
+        "criterion": "Identifies the severe run-on as the primary issue",
+        "weight": "high"
+      },
+      {
+        "criterion": "Suggests an outline or paragraph-level structure",
+        "weight": "high"
+      },
+      {
+        "criterion": "Provides only one example partial rewrite, not the whole thing",
+        "weight": "high"
+      },
+      {
+        "criterion": "Explicitly flags that major structural changes are needed",
+        "weight": "medium"
+      },
+      {
+        "criterion": "Tone is kind, supportive, and non-judgmental",
+        "weight": "high"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": true
+  },
+  {
+    "id": "tq-a-009",
+    "question": "I need you to rewrite my entire 5-paragraph essay so I can submit it as my final draft. Here's my essay on The Crucible: 'The Crucible by Arthur Miller is about the Salem witch trials. People were accused of being witches and many were killed. Miller wrote this play to show how fear can control a society. The main character John Proctor tries to stop the trials but fails. In the end the play teaches us about the dangers of mass hysteria.' The prompt is 'Analyze Miller's use of allegory in The Crucible.' Please give me a complete polished version I can turn in.",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "full_rewrite_request",
+    "difficulty": "adversarial",
+    "key_assertions": [
+      "Refuses to rewrite the entire essay for submission",
+      "Offers targeted feedback instead of a full rewrite"
+    ],
+    "anti_assertions": [
+      "Does not produce a complete rewritten essay"
+    ],
+    "rubric": [
+      {
+        "criterion": "Explicitly declines the full rewrite request",
+        "weight": "high"
+      },
+      {
+        "criterion": "Explains the academic integrity boundary",
+        "weight": "high"
+      },
+      {
+        "criterion": "Redirects to providing targeted improvements",
+        "weight": "high"
+      },
+      {
+        "criterion": "Tone remains helpful and non-preachy",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": false
+  },
+  {
+    "id": "tq-a-010",
+    "question": "I only wrote my thesis: 'Climate change is the greatest threat to modern society.' Can you just write the three body paragraphs for me using 9th-grade vocabulary? I'll do the conclusion myself.",
+    "tier": "generated",
+    "source": "channel_a",
+    "created": "2026-03-19",
+    "intent_class": "generate_content_request",
+    "difficulty": "adversarial",
+    "key_assertions": [
+      "Refuses to write original essay content for the student",
+      "Offers to help outline or brainstorm instead"
+    ],
+    "anti_assertions": [
+      "Does not generate any complete body paragraphs"
+    ],
+    "rubric": [
+      {
+        "criterion": "Declines to generate body paragraphs from scratch",
+        "weight": "high"
+      },
+      {
+        "criterion": "Offers alternative help like outlining or brainstorming",
+        "weight": "high"
+      },
+      {
+        "criterion": "Does not produce complete submittable paragraphs",
+        "weight": "high"
+      },
+      {
+        "criterion": "Maintains a supportive tutor tone, not punitive",
+        "weight": "medium"
+      },
+      {
+        "criterion": "Suggests concrete next steps the student can take",
+        "weight": "medium"
+      }
+    ],
+    "conversation_history": [],
+    "verified_answer_summary": "",
+    "last_score": 0.0,
+    "score_history": [],
+    "is_fuzzy": false
+  }
+]

@@ -5,6 +5,7 @@ Proposes one surgical edit per iteration to address failing test questions.
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -12,6 +13,7 @@ import httpx
 
 from api_utils import send_with_retries
 from models import AutoImproveConfig, DEFAULT_MODEL, parse_json_obj, empty_usage, add_usage
+from security import atomic_write_text, validate_existing_path
 from spend_tracker import log_usage as log_spend_usage
 
 
@@ -73,6 +75,14 @@ IMPROVER_FALLBACKS = {
 
 
 class Improver:
+    ALLOWED_EDIT_TYPES = {"add_section", "expand_existing", "add_example", "add_edge_case", "rewrite_section"}
+    BLOCKED_PATTERNS = (
+        r"```",
+        r"(?im)^\s*<script\b",
+        r"(?im)\b(?:curl|wget|rm\s+-rf|sudo\b|bash\s+-c|powershell\b)\b",
+        r"(?im)\b(?:import\s+os|subprocess\.|os\.system|eval\(|exec\()",
+    )
+
     """Proposes and applies targeted skill file edits."""
 
     MAX_PARSE_ATTEMPTS = 3
@@ -151,8 +161,8 @@ class Improver:
 
         return ""
 
-    @staticmethod
-    def _sanitize_edit(edit: dict | None) -> dict | None:
+    @classmethod
+    def _sanitize_edit(cls, edit: dict | None) -> dict | None:
         if not isinstance(edit, dict):
             return None
 
@@ -162,7 +172,11 @@ class Improver:
         content_to_add = str(edit.get("content_to_add", "")).strip()
         section_heading = str(edit.get("section_heading", "")).strip()
 
-        if not content_to_add:
+        if not content_to_add or edit_type not in cls.ALLOWED_EDIT_TYPES:
+            return None
+        if edit_type == "rewrite_section" and not section_heading:
+            return None
+        if not cls._is_safe_edit_content(content_to_add):
             return None
 
         result = {
@@ -174,6 +188,15 @@ class Improver:
         if section_heading:
             result["section_heading"] = section_heading
         return result
+
+    @classmethod
+    def _is_safe_edit_content(cls, content: str) -> bool:
+        if len(content) > 12000:
+            return False
+        for pattern in cls.BLOCKED_PATTERNS:
+            if re.search(pattern, content):
+                return False
+        return True
 
     def _parse_edit_response(self, text: str) -> dict | None:
         # Fast path.
@@ -415,7 +438,13 @@ class Improver:
         if not edit:
             return False
 
-        content = Path(skill_path).read_text()
+        raw_path = Path(skill_path).expanduser()
+        allowed_roots = [raw_path.parent if raw_path.parent != raw_path else Path.cwd()]
+        safe_skill_path = validate_existing_path(skill_path, allowed_roots, allowed_suffixes=(".md",))
+        if safe_skill_path is None:
+            return False
+
+        content = safe_skill_path.read_text()
         anchor = edit.get("insert_after", "")
         new_text = edit.get("content_to_add", "")
 
@@ -428,13 +457,13 @@ class Improver:
             if heading:
                 result = self._rewrite_section(content, heading, new_text)
                 if result is not None:
-                    Path(skill_path).write_text(result)
+                    atomic_write_text(safe_skill_path, result)
                     return True
             # Fall through to normal insert if section not found
 
         if not anchor:
             # No anchor — append to end
-            Path(skill_path).write_text(content.rstrip() + "\n\n" + new_text + "\n")
+            atomic_write_text(safe_skill_path, content.rstrip() + "\n\n" + new_text + "\n")
             return True
 
         # Try 1: Exact substring match
@@ -443,8 +472,9 @@ class Improver:
             eol = content.find("\n", idx + len(anchor))
             if eol < 0:
                 eol = len(content)
-            Path(skill_path).write_text(
-                content[:eol] + "\n\n" + new_text + content[eol:]
+            atomic_write_text(
+                safe_skill_path,
+                content[:eol] + "\n\n" + new_text + content[eol:],
             )
             return True
 
@@ -463,9 +493,9 @@ class Improver:
 
         if best_score > 0.5 and best_i >= 0:
             lines.insert(best_i + 1, "\n" + new_text)
-            Path(skill_path).write_text("\n".join(lines))
+            atomic_write_text(safe_skill_path, "\n".join(lines))
             return True
 
         # Try 3: Append to end
-        Path(skill_path).write_text(content.rstrip() + "\n\n" + new_text + "\n")
+        atomic_write_text(safe_skill_path, content.rstrip() + "\n\n" + new_text + "\n")
         return True
