@@ -1,6 +1,0 @@
-timestamp	edit_description	aggregate_before	aggregate_after	kept	reason	worst_question	worst_score
-2026-03-12T17:22:27.037840+00:00	baseline	0.0000	0.9605	True	baseline		0.0000
-2026-03-12T17:33:46.259810+00:00	baseline	0.0000	0.9439	True	baseline		0.0000
-2026-03-12T17:35:44.512042+00:00	Add a guideline requiring the skill to flag broad or context-dependent questions upfront before prescribing steps, directly fixing the KEY_ASSERTION_FAIL flag on tq-a-007	0.9421	0.9567	True	improved	tq-a-009	0.9225
-2026-03-12T17:58:29.375728+00:00	baseline	0.0000	0.9573	True	baseline		0.0000
-2026-03-12T17:59:38.077918+00:00	Add a guideline for beginner-friendly explanations that avoids jargon or replaces it with simple analogies, directly addressing the minor jargon issue flagged in tq-a-001 and the age-appropriate analogy feedback in tq-a-008	0.9545	0.9636	True	improved	tq-agent-002	0.9100
