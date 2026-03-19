@@ -1,0 +1,32 @@
+# Environment and secrets
+.env
+*.env
+*.env.local
+
+# Dependencies and build outputs (all levels)
+**/node_modules/
+**/dist/
+
+# Python caches
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Runtime/session data
+memory/
+data/sessions/
+agents/main/skills/copylobsta/data/spotlight-history.json
+
+# Logs and local databases
+*.log
+logs/*.log
+*.db
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# OpenClaw local state
+.openclaw/workspace-state.json

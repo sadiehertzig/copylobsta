@@ -1,0 +1,324 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  OpenClaw Runtime — provisions a single EC2 instance for running an OpenClaw bot.
+  Deployed by CopyLobsta during friend onboarding.
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t3.medium
+    AllowedValues: [t3.micro, t3.small, t3.medium, t3.large]
+    Description: EC2 instance type
+
+  VolumeSize:
+    Type: Number
+    Default: 64
+    MinValue: 20
+    MaxValue: 200
+    Description: Root EBS volume size in GB
+
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+    Description: Ubuntu 24.04 LTS AMI (auto-resolved via SSM)
+
+  BudgetAlertEmail:
+    Type: String
+    Default: ""
+    Description: Email for budget alerts (leave empty to skip)
+
+  SecretPrefix:
+    Type: String
+    Default: openclaw/
+    Description: AWS Secrets Manager prefix for this instance
+
+  RepoUrl:
+    Type: String
+    Default: https://github.com/OpenClaw/CopyLobsta.git
+    Description: Git repo URL to clone
+
+  RepoRef:
+    Type: String
+    Default: main
+    Description: Git branch, tag, or commit SHA to checkout (pin for reproducibility)
+
+  CallbackUrl:
+    Type: String
+    Default: ""
+    Description: CopyLobsta callback URL — notified when bootstrap completes
+
+  SessionToken:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Session token for authenticating setup API requests and callbacks
+
+Conditions:
+  HasBudgetEmail: !Not [!Equals [!Ref BudgetAlertEmail, ""]]
+
+Resources:
+
+  # --- Networking ---
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-vpc"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.0/25
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public"
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
+
+  # --- Security Group ---
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: OpenClaw instance — outbound only, no inbound SSH
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS inbound (for Mini App webhooks)
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+          Description: All outbound
+
+  # --- Elastic IP ---
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      InstanceId: !Ref Instance
+
+  # --- IAM Role (SSM + Secrets Manager) ---
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:CreateSecret
+                  - secretsmanager:PutSecretValue
+                  - secretsmanager:UpdateSecret
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${SecretPrefix}*"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  # --- EC2 Instance ---
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref VolumeSize
+            VolumeType: gp3
+            Encrypted: true
+            DeleteOnTermination: true
+      MetadataOptions:
+        HttpTokens: required
+        HttpEndpoint: enabled
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-openclaw"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euo pipefail
+          exec > >(tee /var/log/openclaw-setup.log) 2>&1
+
+          echo "=== OpenClaw Instance Bootstrap ==="
+          export DEBIAN_FRONTEND=noninteractive
+
+          # System updates
+          apt-get update -y
+          apt-get upgrade -y
+
+          # Node.js 20 LTS — pinned version, checksum verified
+          NODE_MAJOR=20
+          curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg
+          echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
+          apt-get update -y
+          apt-get install -y nodejs
+
+          # Python 3.11
+          apt-get install -y python3.11 python3.11-venv python3-pip
+
+          # Git + build tools
+          apt-get install -y git build-essential
+
+          # PM2 for process management
+          npm install -g pm2
+
+          # cloudflared for temporary HTTPS setup tunnel
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o /tmp/cloudflared.deb
+          apt-get install -y /tmp/cloudflared.deb
+
+          # Verify SSM Agent is running
+          systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service || true
+          systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service || true
+
+          # Create openclaw user
+          useradd -m -s /bin/bash openclaw || true
+
+          # Clone repo at pinned ref
+          su - openclaw -c "git clone --branch ${RepoRef} --single-branch ${RepoUrl} ~/copylobsta"
+
+          # Run install script (non-interactive)
+          su - openclaw -c "cd ~/copylobsta && bash setup/install.sh"
+
+          # Start the CopyLobsta Setup API (temporary — for key entry during onboarding)
+          if [ -n "${SessionToken}" ]; then
+            echo "=== Starting Setup API ==="
+            su - openclaw -c "cd ~/copylobsta/agents/main/skills/copylobsta/setup-api && npm install && npm run build"
+            su - openclaw -c "cd ~/copylobsta/agents/main/skills/copylobsta/setup-api && SESSION_TOKEN='${SessionToken}' AWS_REGION='${AWS::Region}' SECRET_PREFIX='${SecretPrefix}' SETUP_BIND='127.0.0.1' node dist/index.js &"
+            sleep 2
+            # Start temporary HTTPS setup tunnel and capture URL
+            SETUP_TUNNEL_URL=""
+            su - openclaw -c "cloudflared tunnel --url http://localhost:8080 --no-autoupdate > /tmp/cloudflared-setup.log 2>&1 &"
+            for i in $(seq 1 30); do
+              SETUP_TUNNEL_URL=$(grep -oE "https://[a-z0-9-]+\.trycloudflare\.com" /tmp/cloudflared-setup.log | head -1 || true)
+              [ -n "$SETUP_TUNNEL_URL" ] && break
+              sleep 1
+            done
+            if [ -z "$SETUP_TUNNEL_URL" ]; then
+              echo "ERROR: Failed to capture setup tunnel URL from cloudflared."
+              echo "---- /tmp/cloudflared-setup.log ----"
+              cat /tmp/cloudflared-setup.log || true
+              exit 1
+            fi
+          fi
+
+          # Notify CopyLobsta that bootstrap is complete
+          if [ -n "${CallbackUrl}" ] && [ -n "${SessionToken}" ] && [ -n "$SETUP_TUNNEL_URL" ]; then
+            INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" http://169.254.169.254/latest/meta-data/instance-id)
+            PUBLIC_IP=$(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" http://169.254.169.254/latest/meta-data/public-ipv4)
+            curl -s -X POST "${CallbackUrl}" \
+              -H "Content-Type: application/json" \
+              -d "{\"sessionToken\":\"${SessionToken}\",\"instanceId\":\"$INSTANCE_ID\",\"instanceIp\":\"$PUBLIC_IP\",\"setupBaseUrl\":\"$SETUP_TUNNEL_URL\"}" || true
+            echo "Callback sent to CopyLobsta"
+          fi
+
+          echo "=== Bootstrap Complete ==="
+
+  # --- Budget Alert ---
+
+  Budget:
+    Type: AWS::Budgets::Budget
+    Condition: HasBudgetEmail
+    Properties:
+      Budget:
+        BudgetName: !Sub "${AWS::StackName}-monthly"
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: 50
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref BudgetAlertEmail
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref BudgetAlertEmail
+
+Outputs:
+  InstanceId:
+    Value: !Ref Instance
+    Description: EC2 Instance ID
+
+  PublicIP:
+    Value: !Ref ElasticIP
+    Description: Elastic IP address
+
+  SSMConnectCommand:
+    Value: !Sub "aws ssm start-session --target ${Instance}"
+    Description: Connect via SSM (no SSH needed)
+
+  SetupLog:
+    Value: /var/log/openclaw-setup.log
+    Description: Path to bootstrap log on the instance

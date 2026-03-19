@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.3.8"
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-6",
+        "fallbacks": [
+          "openai/gpt-5.4",
+          "google/gemini-3-flash-preview"
+        ]
+      },
+      "workspace": "__REPO_DIR__/agents/main",
+      "memorySearch": {
+        "provider": "gemini",
+        "fallback": "local",
+        "model": "gemini-embedding-001",
+        "query": {
+          "hybrid": {
+            "enabled": true,
+            "vectorWeight": 0.7,
+            "textWeight": 0.3,
+            "candidateMultiplier": 4,
+            "mmr": {
+              "enabled": true,
+              "lambda": 0.7
+            },
+            "temporalDecay": {
+              "enabled": true,
+              "halfLifeDays": 30
+            }
+          }
+        }
+      },
+      "subagents": {
+        "maxConcurrent": 3,
+        "runTimeoutSeconds": 900
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "name": "My Bot",
+        "workspace": "__REPO_DIR__/agents/main",
+        "model": {
+          "primary": "anthropic/claude-sonnet-4-6",
+          "fallbacks": [
+            "openai/gpt-5.4"
+          ]
+        }
+      }
+    ]
+  },
+  "tools": {
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "gemini"
+      },
+      "fetch": {
+        "enabled": true
+      }
+    },
+    "sessions": {
+      "visibility": "all"
+    }
+  },
+  "bindings": [
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "telegram",
+        "accountId": "default"
+      }
+    }
+  ],
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "text": true,
+    "bash": false,
+    "restart": true
+  }
+}

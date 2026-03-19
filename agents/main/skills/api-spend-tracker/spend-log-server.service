@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenClaw Spend Tracker Log Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/copylobsta/agents/main/skills/api-spend-tracker/scripts/log_server.py
+EnvironmentFile=%h/.openclaw/.env
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

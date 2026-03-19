@@ -1,0 +1,545 @@
+/* CopyLobsta Mini App — Telegram WebApp Styles */
+
+:root {
+  --bg: var(--tg-theme-bg-color, #ffffff);
+  --text: var(--tg-theme-text-color, #1a1a1a);
+  --hint: var(--tg-theme-hint-color, #999999);
+  --link: var(--tg-theme-link-color, #2481cc);
+  --btn-bg: var(--tg-theme-button-color, #e04040);
+  --btn-text: var(--tg-theme-button-text-color, #ffffff);
+  --secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
+  --lobsta-red: #e04040;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+#app {
+  padding: 0;
+}
+
+/* --- Screens --- */
+.screen {
+  display: none;
+  padding: 16px;
+  padding-bottom: 100px;
+}
+.screen.active {
+  display: block;
+}
+
+/* --- Loading + centered content --- */
+.center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  gap: 12px;
+}
+
+/* --- Header --- */
+.lobsta-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.screen-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-top: 8px;
+}
+.screen-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.screen-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.subtitle {
+  color: var(--hint);
+  font-size: 16px;
+}
+
+/* --- Step badge --- */
+.step-badge {
+  display: inline-block;
+  background: var(--secondary-bg);
+  color: var(--hint);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+/* --- Screen body --- */
+.screen-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- Cards --- */
+.card {
+  background: var(--secondary-bg);
+  border-radius: 12px;
+  padding: 16px;
+}
+.card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.card p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+.card p:last-child {
+  margin-bottom: 0;
+}
+
+.provider-card {
+  background: var(--secondary-bg);
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid var(--btn-bg);
+}
+.provider-card p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cost-card {
+  border-left: 4px solid #f59e0b;
+}
+
+.note {
+  color: var(--hint);
+  font-size: 13px;
+  font-style: italic;
+  margin-top: 6px;
+}
+
+/* --- Checklists --- */
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+.checklist li {
+  font-size: 14px;
+  line-height: 1.6;
+  padding-left: 24px;
+  position: relative;
+  margin-bottom: 4px;
+}
+.checklist li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  color: #22c55e;
+  font-weight: 700;
+}
+
+/* --- Cost list --- */
+.cost-list {
+  list-style: none;
+  padding: 0;
+}
+.cost-list li {
+  font-size: 14px;
+  margin-bottom: 6px;
+  padding-left: 8px;
+}
+
+/* --- Cost table --- */
+.cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 8px 0;
+}
+.cost-table th,
+.cost-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.cost-table th {
+  font-weight: 600;
+  color: var(--hint);
+  font-size: 12px;
+}
+.cost-table .total td {
+  border-top: 2px solid var(--text);
+  border-bottom: none;
+}
+
+/* --- Step guide (numbered) --- */
+.step-guide {
+  padding-left: 0;
+  counter-reset: step-counter;
+  list-style: none;
+}
+.step-guide li {
+  counter-increment: step-counter;
+  position: relative;
+  padding-left: 36px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.step-guide li::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.step-text {
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* --- Buttons --- */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 14px 24px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 14px 24px;
+  background: transparent;
+  color: var(--btn-bg);
+  border: 2px solid var(--btn-bg);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-secondary:active {
+  opacity: 0.85;
+}
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+}
+.btn-group .btn-primary,
+.btn-group .btn-secondary {
+  flex: 1;
+}
+
+.btn-external {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.btn-external::after {
+  content: " \2197";
+}
+
+/* --- Footer --- */
+.screen-footer {
+  padding: 16px 0;
+}
+
+/* --- Input groups --- */
+.input-group {
+  margin-top: 12px;
+}
+.input-group label,
+.key-input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--hint);
+}
+.input-group input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--secondary-bg);
+  border-radius: 8px;
+  font-size: 15px;
+  background: var(--bg);
+  color: var(--text);
+}
+.input-group input:focus {
+  border-color: var(--btn-bg);
+  outline: none;
+}
+
+/* --- Key input --- */
+.key-input-group {
+  margin-top: 12px;
+}
+.key-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.key-input-wrapper input {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid var(--secondary-bg);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-width: 0;
+}
+.key-input-wrapper input:focus {
+  border-color: var(--btn-bg);
+  outline: none;
+}
+.btn-toggle-vis {
+  padding: 8px 12px;
+  background: var(--secondary-bg);
+  border: 2px solid var(--secondary-bg);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--hint);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* --- Validation status --- */
+.validation-status {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  min-height: 20px;
+}
+.status-pending {
+  color: var(--hint);
+}
+.status-pending::before {
+  content: "\23F3 ";
+}
+.validation-status.status-success {
+  color: #22c55e;
+}
+.validation-status.status-success::before {
+  content: "\2713 ";
+}
+.validation-status.status-error {
+  color: #ef4444;
+}
+.validation-status.status-error::before {
+  content: "\2717 ";
+}
+
+/* Big success checkmark (used on AWS launch done) */
+.status-success:not(.validation-status) {
+  color: #22c55e;
+  font-size: 48px;
+  text-align: center;
+  margin: 16px 0;
+}
+
+/* --- Polling spinner --- */
+.polling-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--secondary-bg);
+  border-top-color: var(--btn-bg);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 16px auto;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Skip link --- */
+.skip-link {
+  display: block;
+  text-align: center;
+  margin-top: 12px;
+  color: var(--hint);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+/* --- Interview --- */
+.interview-progress {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hint);
+  margin-bottom: 4px;
+}
+.interview-progress .progress-bar {
+  height: 4px;
+  background: var(--secondary-bg);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.interview-progress .progress-fill {
+  height: 100%;
+  background: var(--btn-bg);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.interview-question {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.interview-followup {
+  font-size: 14px;
+  color: var(--hint);
+  font-style: italic;
+  margin-bottom: 4px;
+}
+.interview-nav {
+  margin-top: 8px;
+}
+
+/* --- Deploy checklist --- */
+.deploy-checklist {
+  list-style: none;
+  padding: 0;
+}
+.deploy-checklist li {
+  font-size: 14px;
+  padding: 8px 0 8px 28px;
+  position: relative;
+  color: var(--hint);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.deploy-checklist li::before {
+  content: "\25CB";
+  position: absolute;
+  left: 0;
+  font-size: 16px;
+}
+.deploy-checklist li.step-done {
+  color: var(--text);
+}
+.deploy-checklist li.step-done::before {
+  content: "\2713";
+  color: #22c55e;
+  font-weight: 700;
+}
+.deploy-checklist li.step-running {
+  color: var(--text);
+  font-weight: 500;
+}
+.deploy-checklist li.step-running::before {
+  content: "\23F3";
+}
+.deploy-checklist li.step-failed::before {
+  content: "\2717";
+  color: #ef4444;
+}
+
+/* --- Soul/user editor textarea --- */
+.soul-editor {
+  width: 100%;
+  font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 12px;
+  border: 2px solid var(--secondary-bg);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+}
+.soul-editor:focus {
+  border-color: var(--btn-bg);
+  outline: none;
+}
+
+/* --- Phase sections --- */
+.phase {
+  transition: opacity 0.2s;
+}
+
+/* --- Button disabled/loading state --- */
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* --- Input validation shake --- */
+.input-error {
+  animation: shake 0.3s ease;
+  border-color: #ef4444 !important;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* --- Utility --- */
+.hidden {
+  display: none !important;
+}
+
+code {
+  background: var(--secondary-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+}

@@ -1,0 +1,4 @@
+timestamp	edit_description	aggregate_before	aggregate_after	kept	reason	worst_question	worst_score
+2026-03-12T17:19:50.723317+00:00	baseline	0.0000	0.0000	True	baseline		0.0000
+2026-03-12T17:21:01.037936+00:00	Add explicit error handling and fallback behavior section to address response generation failures. The tests are scoring 0.0 with 'error' flags, suggesting the skill lacks guidance on how to handle tool errors, unavailable sources, or unknown entities. This section instructs the model to gracefully handle failures and still produce a useful response.	0.0000	0.0000	False	no_improvement	tq-e2e-001	0.0000
+2026-03-12T18:00:43.069353+00:00	baseline	0.0000	0.0000	True	baseline		0.0000

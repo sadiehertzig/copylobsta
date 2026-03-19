@@ -1,0 +1,24 @@
+{
+  "name": "copylobsta-setup-api",
+  "version": "0.1.0",
+  "description": "Temporary setup API on friend's instance — validates keys and writes to Secrets Manager",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.700.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.12.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.0"
+  }
+}
