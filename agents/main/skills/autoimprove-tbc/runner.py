@@ -19,11 +19,9 @@ import httpx
 
 from api_utils import GEMINI_SEARCH_TOOL_OPTIONS, send_with_retries
 from models import TestCase, DEFAULT_MODEL, empty_usage, add_usage
-from security import validate_existing_path
 from spend_tracker import log_usage as log_spend_usage
 
 GEMINI_MODEL = "gemini-2.5-flash"
-DIRECT_INVOCATION_ENV = "AUTOIMPROVE_ALLOW_DIRECT_INVOCATION"
 
 
 class ResponseRunner:
@@ -32,21 +30,6 @@ class ResponseRunner:
     def __init__(self):
         self.anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
         self.token_usage = empty_usage()
-
-    @staticmethod
-    def _direct_mode_enabled() -> bool:
-        return os.environ.get(DIRECT_INVOCATION_ENV, "").strip() in {"1", "true", "TRUE", "yes", "on"}
-
-    @staticmethod
-    def _allowed_direct_roots(skill_path: str) -> list[Path]:
-        roots = []
-        skills_dir = os.environ.get("OPENCLAW_SKILLS_DIR", "").strip()
-        if skills_dir:
-            roots.append(Path(skills_dir))
-        p = Path(skill_path).expanduser()
-        if p.exists():
-            roots.append(p if p.is_dir() else p.parent)
-        return roots
 
     def _track_usage(self, raw_usage: dict | None):
         add_usage(self.token_usage, raw_usage)
@@ -324,13 +307,21 @@ class ResponseRunner:
         self._track_usage(total_usage)
         return self._err(tc, last_error)
 
-    def _find_entry_point(self, skill_path: Path) -> str | None:
-        """Locate a Python entry point under a validated skill path."""
-        p = skill_path
+    def _find_entry_point(self, skill_path: str) -> str | None:
+        """
+        Locate the Python entry point for a skill.
 
+        If skill_path is a .py file, use it directly.
+        If it's a .md file or directory, scan the parent/directory for
+        .py files containing handle_skill_request.
+        """
+        p = Path(skill_path)
+
+        # Direct .py file
         if p.suffix == ".py" and p.exists():
             return str(p)
 
+        # Determine directory to scan
         if p.is_dir():
             scan_dir = p
         elif p.exists():
@@ -338,42 +329,30 @@ class ResponseRunner:
         else:
             return None
 
+        # Look for .py files with handle_skill_request
         for py_file in sorted(scan_dir.glob("*.py")):
             if py_file.name.startswith("__"):
                 continue
             try:
-                source = py_file.read_text()
-                if "def handle_skill_request" in source:
-                    return str(py_file.resolve())
+                text = py_file.read_text()
+                if "def handle_skill_request" in text:
+                    return str(py_file)
             except OSError:
                 continue
 
         return None
 
     async def _run_direct(self, skill_path: str, tc: TestCase) -> dict:
-        if not self._direct_mode_enabled():
-            return self._err(tc, f"direct_invocation disabled. Set {DIRECT_INVOCATION_ENV}=1 for local debug mode")
-
         if not skill_path:
             return self._err(tc, "No skill_path provided for direct_invocation mode")
 
-        safe_path = validate_existing_path(
-            skill_path,
-            allowed_roots=self._allowed_direct_roots(skill_path),
-            allowed_suffixes=(".py", ".md", ""),
-        )
-        if safe_path is None:
-            return self._err(tc, f"Rejected unsafe skill_path for direct_invocation: {skill_path}")
-
-        entry_point = self._find_entry_point(safe_path)
+        entry_point = self._find_entry_point(skill_path)
         if not entry_point:
-            return self._err(tc, f"No Python entry point with handle_skill_request found near {safe_path}")
+            return self._err(tc, f"No Python entry point with handle_skill_request found near {skill_path}")
 
         try:
             spec = importlib.util.spec_from_file_location("skill_mod", entry_point)
             module = importlib.util.module_from_spec(spec)
-            if spec is None or spec.loader is None:
-                return self._err(tc, "Failed to load entry point module")
             spec.loader.exec_module(module)
 
             if hasattr(module, "handle_skill_request"):

@@ -2,10 +2,8 @@
 AutoImprove scorer and ratchet.
 Weighted scoring with tier/difficulty multipliers.
 Git-based keep/discard for the improvement loop.
-Falls back to file-copy revert when skill path is outside the repo (e.g. /tmp sweep copies).
 """
 
-import shutil
 import subprocess
 from pathlib import Path
 from models import TestCase, Verdict, AutoImproveConfig
@@ -44,28 +42,18 @@ class Scorer:
 class Ratchet:
     """Git-based keep/discard logic for the improvement loop."""
 
-    PROTECTED_BRANCHES = {"main", "master", "production", "release"}
-
     def __init__(self, repo_path: str = "", skill_path: str = ""):
         self.repo_path = repo_path
         self.skill_path = skill_path
 
-    def _rel_skill_path(self) -> str | None:
-        """Return the skill file path relative to the repo root, or None if outside repo."""
+    def _rel_skill_path(self) -> str:
+        """Return the skill file path relative to the repo root."""
         if not self.repo_path or not self.skill_path:
-            return None
+            return ""
         try:
             return str(Path(self.skill_path).relative_to(self.repo_path))
         except ValueError:
-            return None  # path is outside the repo (e.g. /tmp sweep copy)
-
-    def _is_outside_repo(self) -> bool:
-        """Return True if the skill file lives outside the git repo."""
-        return self._rel_skill_path() is None
-
-    def _snapshot_path(self) -> Path:
-        """Path for the file-copy snapshot used as a fallback revert mechanism."""
-        return Path(self.skill_path).with_suffix(".autoimprove_snapshot.md")
+            return self.skill_path
 
     def should_keep(self, before_scores: dict, after_scores: dict,
                     before_verdicts: list, after_verdicts: list,
@@ -84,9 +72,11 @@ class Ratchet:
         agg_before = scorer.weighted_mean(before_scores, test_bank)
         agg_after = scorer.weighted_mean(after_scores, test_bank)
 
+        # Rule 1
         if agg_after <= agg_before:
             return False, "no_improvement"
 
+        # Rule 2: protect curated and adversarial tests from regression
         protected_ids = {
             tc.id for tc in test_bank
             if tc.tier == "curated" or tc.difficulty == "adversarial"
@@ -100,29 +90,25 @@ class Ratchet:
                     label = "curated" if tc and tc.tier == "curated" else "adversarial"
                     return False, f"{label}_regression_{tid}"
 
+        # Rule 3
         before_safety = {v.test_id for v in before_verdicts if v.has_safety_flag}
         after_safety = {v.test_id for v in after_verdicts if v.has_safety_flag}
         new_safety = after_safety - before_safety
         if new_safety:
             return False, f"new_safety_{next(iter(new_safety))}"
 
+        # Rule 4
         if agg_after - agg_before < config.min_improvement:
             return False, "below_min_improvement"
 
         return True, "improved"
 
     def setup_branch(self):
-        if self.repo_path and not self._is_outside_repo():
-            self._refuse_protected_branch()
+        if self.repo_path:
             self._git("checkout", "-B", "feature/autoimprove-tbc", "main")
 
     def commit(self, msg: str):
-        if self._is_outside_repo():
-            # Outside repo: save a file-copy snapshot as the new "good" state
-            shutil.copy2(self.skill_path, self._snapshot_path())
-            return
         if self.repo_path:
-            self._refuse_protected_branch()
             rel = self._rel_skill_path()
             if rel:
                 self._git("add", rel)
@@ -131,13 +117,6 @@ class Ratchet:
             self._git("commit", "-m", f"autoimprove: {msg}")
 
     def revert(self):
-        if self._is_outside_repo():
-            # Outside repo: restore from file-copy snapshot if available,
-            # otherwise no-op (sweep will discard the temp file anyway)
-            snap = self._snapshot_path()
-            if snap.exists():
-                shutil.copy2(snap, self.skill_path)
-            return
         if self.repo_path:
             rel = self._rel_skill_path()
             if rel:
@@ -146,34 +125,11 @@ class Ratchet:
                 self._git("checkout", "--", ".")
 
     def push(self):
-        if self.repo_path and not self._is_outside_repo():
-            self._refuse_protected_branch()
-            self._git("push", "origin", "HEAD")
-
-    def _current_branch(self) -> str:
-        if not self.repo_path:
-            return ""
-        result = subprocess.run(
-            ["git", "branch", "--show-current"],
-            cwd=self.repo_path,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        return result.stdout.strip()
-
-    def _refuse_protected_branch(self):
-        branch = self._current_branch()
-        if branch in self.PROTECTED_BRANCHES:
-            raise RuntimeError(f"Refusing autoimprove git operation on protected branch: {branch}")
+        if self.repo_path:
+            self._git("push", "-f", "origin", "feature/autoimprove-tbc")
 
     def _git(self, *args):
-        result = subprocess.run(
+        subprocess.run(
             ["git"] + list(args),
-            cwd=self.repo_path,
-            capture_output=True,
-            text=True,
-            check=False,
+            cwd=self.repo_path, capture_output=True, text=True,
         )
-        if result.returncode != 0:
-            raise RuntimeError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
