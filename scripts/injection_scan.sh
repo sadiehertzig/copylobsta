@@ -68,13 +68,14 @@ send_telegram() {
   fi
   for cid in "${CHAT_IDS[@]}"; do
     [ -n "${cid}" ] || continue
-    curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+    if ! curl -s --max-time 8 -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
       -d chat_id="${cid}" \
       -d text="${msg}" \
-      -d parse_mode="Markdown" > /dev/null 2>&1 || \
-    curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-      -d chat_id="${cid}" \
-      -d text="${msg}" > /dev/null 2>&1
+      -d parse_mode="Markdown" > /dev/null 2>&1; then
+      curl -s --max-time 8 -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+        -d chat_id="${cid}" \
+        -d text="${msg}" > /dev/null 2>&1 || true
+    fi
   done
 }
 
