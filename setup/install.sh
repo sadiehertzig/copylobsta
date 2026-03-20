@@ -63,6 +63,16 @@ if ! grep -q "OPENCLAW_GATEWAY_TOKEN=" "$ENV_FILE" 2>/dev/null || \
   echo "Generated gateway token."
 fi
 
+# --- Set TRIVIA_VOICE_BASE_URL if not set ---
+if ! grep -q "TRIVIA_VOICE_BASE_URL=" "$ENV_FILE" 2>/dev/null || \
+   grep -q "TRIVIA_VOICE_BASE_URL=$" "$ENV_FILE" 2>/dev/null; then
+  TRIVIA_PORT=$(grep "^TRIVIA_PORT=" "$ENV_FILE" 2>/dev/null | cut -d= -f2)
+  TRIVIA_PORT="${TRIVIA_PORT:-3456}"
+  sed -i "s|^TRIVIA_VOICE_BASE_URL=.*|TRIVIA_VOICE_BASE_URL=http://localhost:$TRIVIA_PORT|" "$ENV_FILE" 2>/dev/null || \
+    echo "TRIVIA_VOICE_BASE_URL=http://localhost:$TRIVIA_PORT" >> "$ENV_FILE"
+  echo "Set TRIVIA_VOICE_BASE_URL=http://localhost:$TRIVIA_PORT"
+fi
+
 # --- Generate CopyLobsta launch secret if not set ---
 if ! grep -q "COPYLOBSTA_LAUNCH_SECRET=" "$ENV_FILE" 2>/dev/null || \
    grep -q "COPYLOBSTA_LAUNCH_SECRET=$" "$ENV_FILE" 2>/dev/null; then
@@ -131,9 +141,11 @@ for service in voice-trivia/trivia-voice.service copylobsta/copylobsta.service; 
   SERVICE_FILE="$REPO_DIR/agents/main/skills/$service"
   SERVICE_NAME=$(basename "$service")
   if [ -f "$SERVICE_FILE" ] && [ ! -f "$SYSTEMD_DIR/$SERVICE_NAME" ]; then
-    # Expand the service template's default %h/copylobsta path to this install location.
+    # Expand the service template's repo path to this install location.
     # systemd WorkingDirectory does not expand shell/env vars.
-    sed "s#%h/copylobsta#$REPO_DIR#g" "$SERVICE_FILE" > "$SYSTEMD_DIR/$SERVICE_NAME"
+    sed -e "s#%h/copylobsta#$REPO_DIR#g" \
+        -e "s#%h/clawdia-hertz-openclaw#$REPO_DIR#g" \
+        "$SERVICE_FILE" > "$SYSTEMD_DIR/$SERVICE_NAME"
     echo "  Installed $SERVICE_NAME"
   fi
 done
