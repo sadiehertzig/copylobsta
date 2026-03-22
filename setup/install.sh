@@ -151,6 +151,69 @@ done
 
 systemctl --user daemon-reload 2>/dev/null || true
 
+# --- Bootstrap self-improving skill memory ---
+echo ""
+echo "Setting up self-improving skill..."
+SI_DIR="$HOME/self-improving"
+if [ ! -d "$SI_DIR" ]; then
+  mkdir -p "$SI_DIR"/{projects,domains,archive}
+
+  cat > "$SI_DIR/memory.md" <<'SIEOF'
+# Self-Improving Memory
+
+## Confirmed Preferences
+<!-- Patterns confirmed by user, never decay -->
+
+## Active Patterns
+<!-- Patterns observed 3+ times, subject to decay -->
+
+## Recent (last 7 days)
+<!-- New corrections pending confirmation -->
+SIEOF
+
+  cat > "$SI_DIR/index.md" <<'SIEOF'
+# Memory Index
+
+## HOT
+- memory.md: 0 lines
+
+## WARM
+- (no namespaces yet)
+
+## COLD
+- (no archives yet)
+
+Last compaction: never
+SIEOF
+
+  cat > "$SI_DIR/corrections.md" <<'SIEOF'
+# Corrections Log
+
+<!-- Format:
+## YYYY-MM-DD
+- [HH:MM] Changed X → Y
+  Type: format|technical|communication|project
+  Context: where correction happened
+  Confirmed: pending (N/3) | yes | no
+-->
+SIEOF
+
+  cat > "$SI_DIR/heartbeat-state.md" <<'SIEOF'
+# Self-Improving Heartbeat State
+
+last_heartbeat_started_at: never
+last_reviewed_change_at: never
+last_heartbeat_result: never
+
+## Last actions
+- none yet
+SIEOF
+
+  echo "  Created ~/self-improving/ with seed files."
+else
+  echo "  ~/self-improving/ already exists — skipping."
+fi
+
 # --- Schedule daily injection scan via cron ---
 echo ""
 echo "Setting up daily injection scan..."
