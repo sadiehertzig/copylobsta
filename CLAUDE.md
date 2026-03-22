@@ -16,7 +16,7 @@ copylobsta/
   agents/
     main/                    — Primary agent
       SOUL.md, USER.md, IDENTITY.md, AGENTS.md, HEARTBEAT.md, TOOLS.md, MEMORY.md
-      skills/                — All skills live here (11 included)
+      skills/                — All skills live here (14 included)
   setup/
     .env.example             — Environment variable template
     openclaw.json.template   — Gateway config template
@@ -49,10 +49,13 @@ Skills follow the OpenClaw/AgentSkills format:
 | code-tutor | Prompt | Hints-first coding tutor |
 | college-essay | Prompt | Essay coaching (**see safety rules below**) |
 | three-body-council | Python | Multi-model debate |
+| autoimprove | Prompt | Autonomous optimization loop for any measurable thing |
 | autoimprove-tbc | Python | Three-Body Council self-improvement with fuzzy-task detection |
+| self-improving | Prompt | Self-reflection, self-criticism, and tiered memory for permanent learning |
 | voice-trivia | Express.js | Voice trivia Mini App (port 3456) |
 | copylobsta | TypeScript | Friend onboarding Mini App (port 3457) |
 | api-spend-tracker | Python | API cost tracking |
+| enable-sharing | Prompt | Enable on-demand CopyLobsta sharing mode (copylobsta-specific) |
 
 ### Installing Community Skills
 

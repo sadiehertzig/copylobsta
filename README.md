@@ -2,7 +2,7 @@
 
 > ⚠️ **HEADS UP:** This project was built by a solo rookie developer and has not been professionally audited. Do not share sensitive personal information, API keys, or passwords with the bot. Use at your own risk.
 
-An OpenClaw distribution repo — clone it, run setup, and you've got a working AI bot on Telegram with 11 skills out of the box.
+An OpenClaw distribution repo — clone it, run setup, and you've got a working AI bot on Telegram with 14 skills out of the box.
 
 CopyLobsta is designed to be deployed automatically by the [CopyLobsta skill](agents/main/skills/copylobsta/) during friend onboarding, but it also works perfectly for manual setup.
 
@@ -33,7 +33,7 @@ systemctl --user start openclaw-gateway
 
 ## Skills
 
-CopyLobsta ships with 11 skills:
+CopyLobsta ships with 14 skills:
 
 | Skill | Description | Type |
 |-------|-------------|------|
@@ -44,10 +44,13 @@ CopyLobsta ships with 11 skills:
 | [code-tutor](agents/main/skills/code-tutor/) | Learn to code with hints-first teaching | Prompt |
 | [college-essay](agents/main/skills/college-essay/) | College application essay coaching (coaching only — won't write for you) | Prompt |
 | [three-body-council](agents/main/skills/three-body-council/) | Multi-model debate for complex questions | Python |
+| [autoimprove](agents/main/skills/autoimprove/) | Autonomous optimization loop for any measurable thing | Prompt |
 | [autoimprove-tbc](agents/main/skills/autoimprove-tbc/) | Three-Body Council self-improvement loop with fuzzy-task auto-detection — grades via multi-model panel, ratchets quality up | Python |
+| [self-improving](agents/main/skills/self-improving/) | Self-reflection, self-criticism, and tiered memory for permanent learning | Prompt |
 | [voice-trivia](agents/main/skills/voice-trivia/) | Real-time voice trivia game via Telegram Mini App | Express.js |
 | [copylobsta](agents/main/skills/copylobsta/) | Share your bot with friends (deploys new instances) | TypeScript |
 | [api-spend-tracker](agents/main/skills/api-spend-tracker/) | Track API costs across providers | Python |
+| [enable-sharing](agents/main/skills/enable-sharing/) | Enable on-demand CopyLobsta sharing mode | Prompt |
 
 ## Daily Skill Spotlight
 

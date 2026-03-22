@@ -116,9 +116,8 @@ echo "Setting up systemd services..."
 SYSTEMD_DIR="$HOME/.config/systemd/user"
 mkdir -p "$SYSTEMD_DIR"
 
-# OpenClaw gateway service
-if [ ! -f "$SYSTEMD_DIR/openclaw-gateway.service" ]; then
-  cat > "$SYSTEMD_DIR/openclaw-gateway.service" <<EOT
+# OpenClaw gateway service (always refresh template for safe defaults)
+cat > "$SYSTEMD_DIR/openclaw-gateway.service" <<EOT
 [Unit]
 Description=OpenClaw Gateway
 After=network-online.target
@@ -128,19 +127,19 @@ Type=simple
 ExecStart=$(command -v openclaw || echo /usr/bin/openclaw) gateway --port 18789
 Restart=always
 RestartSec=5
-EnvironmentFile=%h/.openclaw/.env
+EnvironmentFile=-%h/.openclaw/.env
+ExecStartPre=/usr/bin/bash -lc 'f="$HOME/.openclaw/.env"; [ -r "$f" ] || { echo "[gateway-preflight] missing or unreadable \$f"; exit 1; }; mode=$(stat -c "%%a" "$f" 2>/dev/null || true); case "$mode" in 600|400) ;; "") ;; *) echo "[gateway-preflight] warning: \$f permissions are \$mode (recommended 600)";; esac; tok=$(grep -E "^OPENCLAW_GATEWAY_TOKEN=" "$f" | tail -n 1 | cut -d= -f2-); [ -n "$tok" ] || { echo "[gateway-preflight] OPENCLAW_GATEWAY_TOKEN missing in \$f"; exit 1; }'
 
 [Install]
 WantedBy=default.target
 EOT
-  echo "  Created openclaw-gateway.service"
-fi
+echo "  Installed openclaw-gateway.service"
 
-# Copy skill services
+# Copy skill services (always refresh templates for safety updates)
 for service in voice-trivia/trivia-voice.service copylobsta/copylobsta.service; do
   SERVICE_FILE="$REPO_DIR/agents/main/skills/$service"
   SERVICE_NAME=$(basename "$service")
-  if [ -f "$SERVICE_FILE" ] && [ ! -f "$SYSTEMD_DIR/$SERVICE_NAME" ]; then
+  if [ -f "$SERVICE_FILE" ]; then
     # Expand the service template's repo path to this install location.
     # systemd WorkingDirectory does not expand shell/env vars.
     sed -e "s#%h/copylobsta#$REPO_DIR#g" \
