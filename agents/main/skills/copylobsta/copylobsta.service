@@ -1,0 +1,16 @@
+[Unit]
+Description=CopyLobsta Onboarding Server
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/clawdia-hertz-openclaw/agents/clawdia/skills/copylobsta/server
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+EnvironmentFile=%h/.openclaw/.env
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStartPre=/usr/bin/bash -lc 'f="$HOME/.openclaw/.env"; [ -r "$f" ] || { echo "[copylobsta-preflight] missing or unreadable $f"; exit 1; }; mode=$(stat -c "%%a" "$f" 2>/dev/null || true); case "$mode" in 600|400) ;; "") ;; *) echo "[copylobsta-preflight] warning: $f permissions are $mode (recommended 600)";; esac; bot=$(grep -E "^OPENCLAW_TELEGRAM_BOT_TOKEN=" "$f" | tail -n 1 | cut -d= -f2-); [ -n "$bot" ] || { echo "[copylobsta-preflight] OPENCLAW_TELEGRAM_BOT_TOKEN missing in $f"; exit 1; }; seckey=$(grep -E "^COPYLOBSTA_SESSION_ENCRYPTION_KEY=" "$f" | tail -n 1 | cut -d= -f2-); [ -n "$seckey" ] || { echo "[copylobsta-preflight] COPYLOBSTA_SESSION_ENCRYPTION_KEY missing in $f"; exit 1; }; modev=$(grep -E "^COPYLOBSTA_SHARING_MODE=" "$f" | tail -n 1 | cut -d= -f2-); if [ "$modev" = "on_demand" ]; then sec=$(grep -E "^COPYLOBSTA_LAUNCH_SECRET=" "$f" | tail -n 1 | cut -d= -f2-); [ -n "$sec" ] || { echo "[copylobsta-preflight] COPYLOBSTA_LAUNCH_SECRET missing while COPYLOBSTA_SHARING_MODE=on_demand"; exit 1; }; cfn=$(grep -E "^CFN_TEMPLATE_URL=" "$f" | tail -n 1 | cut -d= -f2-); bkt=$(grep -E "^COPYLOBSTA_TEMPLATE_S3_BUCKET=" "$f" | tail -n 1 | cut -d= -f2-); key=$(grep -E "^COPYLOBSTA_TEMPLATE_S3_KEY=" "$f" | tail -n 1 | cut -d= -f2-); if [ -n "$bkt" ] && [ -z "$key" ]; then echo "[copylobsta-preflight] COPYLOBSTA_TEMPLATE_S3_KEY missing while COPYLOBSTA_TEMPLATE_S3_BUCKET is set"; exit 1; fi; if [ -n "$key" ] && [ -z "$bkt" ]; then echo "[copylobsta-preflight] COPYLOBSTA_TEMPLATE_S3_BUCKET missing while COPYLOBSTA_TEMPLATE_S3_KEY is set"; exit 1; fi; if [ -z "$cfn" ] && [ -z "$bkt" ]; then echo "[copylobsta-preflight] missing template source: set COPYLOBSTA_TEMPLATE_S3_BUCKET + COPYLOBSTA_TEMPLATE_S3_KEY (recommended), or CFN_TEMPLATE_URL"; exit 1; fi; fi'
+
+[Install]
+WantedBy=default.target

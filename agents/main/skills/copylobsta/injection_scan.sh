@@ -1,0 +1,1 @@
+../../../../scripts/injection_scan.sh

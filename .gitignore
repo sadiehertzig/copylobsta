@@ -15,6 +15,7 @@
 # Runtime/session data
 memory/
 data/sessions/
+agents/main/skills/copylobsta/data/sessions/
 agents/main/skills/copylobsta/data/spotlight-history.json
 
 # Logs and local databases

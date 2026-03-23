@@ -272,8 +272,8 @@ Resources:
           # Start the CopyLobsta Setup API (temporary - for key entry during onboarding)
           if [ -n "${SessionToken}" ]; then
             echo "=== Starting Setup API ==="
-            su - openclaw -c "cd ~/copylobsta-setup-api-src/setup-api && npm install && npm run build"
-            su - openclaw -c "cd ~/copylobsta-setup-api-src/setup-api && nohup env SESSION_TOKEN='${SessionToken}' AWS_REGION='${AWS::Region}' SECRET_PREFIX='${SecretPrefix}' SETUP_BIND='127.0.0.1' COPYLOBSTA_REPO_DIR='/home/openclaw/copylobsta' node dist/index.js >/tmp/copylobsta-setup-api.log 2>&1 < /dev/null &"
+            su - openclaw -c "cd ~/copylobsta-setup-api-src/agents/main/skills/copylobsta/setup-api && npm install && npm run build"
+            su - openclaw -c "cd ~/copylobsta-setup-api-src/agents/main/skills/copylobsta/setup-api && nohup env SESSION_TOKEN='${SessionToken}' AWS_REGION='${AWS::Region}' SECRET_PREFIX='${SecretPrefix}' SETUP_BIND='127.0.0.1' COPYLOBSTA_REPO_DIR='/home/openclaw/copylobsta' node dist/index.js >/tmp/copylobsta-setup-api.log 2>&1 < /dev/null &"
             sleep 2
             # Start temporary HTTPS setup tunnel and capture URL
             SETUP_TUNNEL_URL=""
