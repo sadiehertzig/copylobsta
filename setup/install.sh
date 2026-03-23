@@ -128,7 +128,8 @@ ExecStart=$(command -v openclaw || echo /usr/bin/openclaw) gateway --port 18789
 Restart=always
 RestartSec=5
 EnvironmentFile=-%h/.openclaw/.env
-ExecStartPre=/usr/bin/bash -lc 'test -r /home/openclaw/.openclaw/.env && grep -q "^OPENCLAW_GATEWAY_TOKEN=." /home/openclaw/.openclaw/.env'
+ExecStartPre=/usr/bin/test -r /home/openclaw/.openclaw/.env
+ExecStartPre=/usr/bin/grep -q ^OPENCLAW_GATEWAY_TOKEN=. /home/openclaw/.openclaw/.env
 
 [Install]
 WantedBy=default.target

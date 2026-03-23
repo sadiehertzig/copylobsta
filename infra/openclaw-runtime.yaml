@@ -263,9 +263,6 @@ Resources:
           # Clone repo at pinned ref
           su - openclaw -c "git clone --branch ${RepoRef} --single-branch ${RepoUrl} ~/copylobsta"
 
-          # Hotfix: relax set -u to set -o to avoid heredoc expansion bug with unset vars.
-          su - openclaw -c "cd ~/copylobsta && sed -i 's/^set -euo pipefail$/set -eo pipefail/' setup/install.sh"
-
           # Run install script (non-interactive)
           su - openclaw -c "export PATH=\"/home/openclaw/.npm-global/bin:\$PATH\"; cd ~/copylobsta && bash setup/install.sh"
 
