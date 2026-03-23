@@ -11,6 +11,10 @@ CONFIG_FILE="$OPENCLAW_DIR/openclaw.json"
 echo "=== CopyLobsta Setup ==="
 echo "Repo directory: $REPO_DIR"
 
+warn_missing_crontab() {
+  echo "  WARNING: crontab is not installed; skipping scheduled task setup."
+}
+
 # --- Check Node.js ---
 if ! command -v node &>/dev/null; then
   echo "ERROR: Node.js not found. Install Node.js 20+ first."
@@ -222,12 +226,16 @@ SCAN_SCRIPT="$REPO_DIR/scripts/injection_scan.sh"
 mkdir -p "$REPO_DIR/logs"
 if [ -f "$SCAN_SCRIPT" ]; then
   chmod +x "$SCAN_SCRIPT"
-  CRON_ENTRY="0 3 * * * $SCAN_SCRIPT >> $REPO_DIR/logs/injection_scan.log 2>&1 # openclaw-injection-scan"
-  if crontab -l 2>/dev/null | grep -q "openclaw-injection-scan"; then
-    echo "  Injection scan cron already exists — skipping."
+  if ! command -v crontab >/dev/null 2>&1; then
+    warn_missing_crontab
   else
-    (crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
-    echo "  Scheduled daily injection scan at 3 AM."
+    CRON_ENTRY="0 3 * * * $SCAN_SCRIPT >> $REPO_DIR/logs/injection_scan.log 2>&1 # openclaw-injection-scan"
+    if crontab -l 2>/dev/null | grep -q "openclaw-injection-scan"; then
+      echo "  Injection scan cron already exists — skipping."
+    else
+      (crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
+      echo "  Scheduled daily injection scan at 3 AM."
+    fi
   fi
 fi
 
@@ -237,12 +245,16 @@ echo "Setting up daily skill spotlight..."
 SPOTLIGHT_SCRIPT="$REPO_DIR/agents/main/skills/copylobsta/run_spotlight.sh"
 if [ -f "$SPOTLIGHT_SCRIPT" ]; then
   chmod +x "$SPOTLIGHT_SCRIPT"
-  SPOTLIGHT_CRON="30 11 * * * $SPOTLIGHT_SCRIPT >> $REPO_DIR/logs/spotlight_cron.log 2>&1 # openclaw-spotlight"
-  if crontab -l 2>/dev/null | grep -q "openclaw-spotlight"; then
-    echo "  Spotlight cron already exists — skipping."
+  if ! command -v crontab >/dev/null 2>&1; then
+    warn_missing_crontab
   else
-    (crontab -l 2>/dev/null; echo "$SPOTLIGHT_CRON") | crontab -
-    echo "  Scheduled daily spotlight at 11:30 UTC."
+    SPOTLIGHT_CRON="30 11 * * * $SPOTLIGHT_SCRIPT >> $REPO_DIR/logs/spotlight_cron.log 2>&1 # openclaw-spotlight"
+    if crontab -l 2>/dev/null | grep -q "openclaw-spotlight"; then
+      echo "  Spotlight cron already exists — skipping."
+    else
+      (crontab -l 2>/dev/null; echo "$SPOTLIGHT_CRON") | crontab -
+      echo "  Scheduled daily spotlight at 11:30 UTC."
+    fi
   fi
 fi
 
