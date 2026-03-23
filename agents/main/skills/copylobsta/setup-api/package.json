@@ -6,8 +6,8 @@
   "author": "OpenClaw",
   "repository": {
     "type": "git",
-    "url": "https://github.com/openclaw/clawdia-hertz-openclaw",
-    "directory": "agents/clawdia/skills/copylobsta/setup-api"
+    "url": "https://github.com/sadiehertzig/copylobsta.git",
+    "directory": "agents/main/skills/copylobsta/setup-api"
   },
   "keywords": ["openclaw", "copylobsta", "aws", "setup", "secrets-manager"],
   "type": "module",

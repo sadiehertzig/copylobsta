@@ -148,7 +148,6 @@ for service in voice-trivia/trivia-voice.service copylobsta/copylobsta.service; 
     # Expand the service template's repo path to this install location.
     # systemd WorkingDirectory does not expand shell/env vars.
     sed -e "s#%h/copylobsta#$REPO_DIR#g" \
-        -e "s#%h/clawdia-hertz-openclaw#$REPO_DIR#g" \
         "$SERVICE_FILE" > "$SYSTEMD_DIR/$SERVICE_NAME"
     echo "  Installed $SERVICE_NAME"
   fi

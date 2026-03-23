@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=%h/clawdia-hertz-openclaw/agents/clawdia/skills/copylobsta/server
+WorkingDirectory=%h/copylobsta/agents/main/skills/copylobsta/server
 ExecStart=/usr/bin/node dist/index.js
 Restart=always
 RestartSec=5

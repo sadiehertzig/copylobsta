@@ -59,7 +59,7 @@ The setup API on your instance may still be starting.
 2. Try refreshing the Mini App
 3. If the instance was restarted, the setup API may need to be restarted:
    - In AWS Console → Systems Manager → Run Command
-   - Run: `cd ~/clawdia-hertz-openclaw/agents/clawdia/skills/copylobsta/setup-api && node dist/index.js`
+   - Run: `cd ~/copylobsta/agents/main/skills/copylobsta/setup-api && node dist/index.js`
 
 ## API Key Issues
 

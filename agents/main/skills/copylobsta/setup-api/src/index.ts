@@ -129,11 +129,8 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
     const { writeFile } = await import("node:fs/promises");
 
     const homeDir = process.env.HOME || "/home/openclaw";
-    const repoDir = resolve(process.env.COPYLOBSTA_REPO_DIR || resolve(homeDir, "clawdia-hertz-openclaw"));
-    const allowedRepoRoots = [
-      resolve(homeDir, "copylobsta"),
-      resolve(homeDir, "clawdia-hertz-openclaw"),
-    ];
+    const repoDir = resolve(process.env.COPYLOBSTA_REPO_DIR || resolve(homeDir, "copylobsta"));
+    const allowedRepoRoots = [resolve(homeDir, "copylobsta")];
 
     // Step 1: Verify repo exists (no git pull from moving HEAD)
     await runDeployStep("clone_repo", async () => {
@@ -151,10 +148,7 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
 
     // Step 2: Install dependencies
     await runDeployStep("install_deps", async () => {
-      const installScriptCandidates = [
-        resolve(repoDir, "setup", "install.sh"),
-        resolve(repoDir, "agents", "clawdia", "skills", "copylobsta", "setup", "install.sh"),
-      ];
+      const installScriptCandidates = [resolve(repoDir, "setup", "install.sh")];
       const installScript = installScriptCandidates.find((p) => existsSync(p));
 
       if (!installScript) {

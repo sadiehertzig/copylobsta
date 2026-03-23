@@ -6,8 +6,8 @@
   "author": "OpenClaw",
   "repository": {
     "type": "git",
-    "url": "https://github.com/openclaw/clawdia-hertz-openclaw",
-    "directory": "agents/clawdia/skills/copylobsta/server"
+    "url": "https://github.com/sadiehertzig/copylobsta.git",
+    "directory": "agents/main/skills/copylobsta/server"
   },
   "keywords": ["openclaw", "copylobsta", "telegram", "miniapp", "onboarding"],
   "type": "module",
