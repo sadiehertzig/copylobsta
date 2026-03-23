@@ -66,6 +66,13 @@
       "visibility": "all"
     }
   },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "botToken": "${OPENCLAW_TELEGRAM_BOT_TOKEN}",
+      "dmPolicy": "pairing"
+    }
+  },
   "bindings": [
     {
       "agentId": "main",

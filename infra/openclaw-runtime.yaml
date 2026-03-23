@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  OpenClaw Runtime — provisions a single EC2 instance for running an OpenClaw bot.
+  OpenClaw Runtime - provisions a single EC2 instance for running an OpenClaw bot.
   Deployed by CopyLobsta during friend onboarding.
 
 Parameters:
@@ -34,24 +34,40 @@ Parameters:
 
   RepoUrl:
     Type: String
-    Default: https://github.com/OpenClaw/CopyLobsta.git
-    Description: Git repo URL to clone
+    Default: https://github.com/sadiehertzig/copylobsta.git
+    Description: Runtime git repo URL to clone
 
   RepoRef:
     Type: String
     Default: main
     Description: Git branch, tag, or commit SHA to checkout (pin for reproducibility)
 
+  SetupApiRepoUrl:
+    Type: String
+    Default: https://github.com/sadiehertzig/clawdia-hertz-openclaw.git
+    Description: Repo URL containing the CopyLobsta setup-api source
+
+  SetupApiRepoRef:
+    Type: String
+    Default: main
+    Description: Branch, tag, or commit SHA for setup-api source
+
   CallbackUrl:
     Type: String
     Default: ""
-    Description: CopyLobsta callback URL — notified when bootstrap completes
+    Description: CopyLobsta callback URL - notified when bootstrap completes
 
   SessionToken:
     Type: String
     NoEcho: true
     Default: ""
     Description: Session token for authenticating setup API requests and callbacks
+
+  CallbackSecret:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: HMAC secret used to sign instance callbacks back to CopyLobsta
 
 Conditions:
   HasBudgetEmail: !Not [!Equals [!Ref BudgetAlertEmail, ""]]
@@ -84,6 +100,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.0.0.0/25
+      AvailabilityZone: !Sub "${AWS::Region}a"
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
@@ -113,7 +130,7 @@ Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: OpenClaw instance — outbound only, no inbound SSH
+      GroupDescription: OpenClaw instance - outbound only, no inbound SSH
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -210,15 +227,15 @@ Resources:
           apt-get update -y
           apt-get upgrade -y
 
-          # Node.js 20 LTS — pinned version, checksum verified
+          # Node.js 20 LTS - pinned version, checksum verified
           NODE_MAJOR=20
           curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg
           echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" > /etc/apt/sources.list.d/nodesource.list
           apt-get update -y
           apt-get install -y nodejs
 
-          # Python 3.11
-          apt-get install -y python3.11 python3.11-venv python3-pip
+          # Python (Ubuntu 24.04 default)
+          apt-get install -y python3 python3-venv python3-pip
 
           # Git + build tools
           apt-get install -y git build-essential
@@ -236,22 +253,34 @@ Resources:
 
           # Create openclaw user
           useradd -m -s /bin/bash openclaw || true
+          # Keep openclaw user services alive outside interactive sessions.
+          loginctl enable-linger openclaw || true
+
+          # Configure a user-local npm global prefix so non-root installs work.
+          su - openclaw -c "mkdir -p ~/.npm-global && npm config set prefix ~/.npm-global"
+          su - openclaw -c "grep -qxF 'export PATH=\"/home/openclaw/.npm-global/bin:\$PATH\"' ~/.profile || echo 'export PATH=\"/home/openclaw/.npm-global/bin:\$PATH\"' >> ~/.profile"
 
           # Clone repo at pinned ref
           su - openclaw -c "git clone --branch ${RepoRef} --single-branch ${RepoUrl} ~/copylobsta"
 
-          # Run install script (non-interactive)
-          su - openclaw -c "cd ~/copylobsta && bash setup/install.sh"
+          # Hotfix: relax set -u to set -o to avoid heredoc expansion bug with unset vars.
+          su - openclaw -c "cd ~/copylobsta && sed -i 's/^set -euo pipefail$/set -eo pipefail/' setup/install.sh"
 
-          # Start the CopyLobsta Setup API (temporary — for key entry during onboarding)
+          # Run install script (non-interactive)
+          su - openclaw -c "export PATH=\"/home/openclaw/.npm-global/bin:\$PATH\"; cd ~/copylobsta && bash setup/install.sh"
+
+          # Clone setup-api source used for temporary onboarding callbacks.
+          su - openclaw -c "git clone --branch ${SetupApiRepoRef} --single-branch ${SetupApiRepoUrl} ~/copylobsta-setup-api-src"
+
+          # Start the CopyLobsta Setup API (temporary - for key entry during onboarding)
           if [ -n "${SessionToken}" ]; then
             echo "=== Starting Setup API ==="
-            su - openclaw -c "cd ~/copylobsta/agents/main/skills/copylobsta/setup-api && npm install && npm run build"
-            su - openclaw -c "cd ~/copylobsta/agents/main/skills/copylobsta/setup-api && SESSION_TOKEN='${SessionToken}' AWS_REGION='${AWS::Region}' SECRET_PREFIX='${SecretPrefix}' SETUP_BIND='127.0.0.1' node dist/index.js &"
+            su - openclaw -c "cd ~/copylobsta-setup-api-src/agents/clawdia/skills/copylobsta/setup-api && npm install && npm run build"
+            su - openclaw -c "cd ~/copylobsta-setup-api-src/agents/clawdia/skills/copylobsta/setup-api && nohup env SESSION_TOKEN='${SessionToken}' AWS_REGION='${AWS::Region}' SECRET_PREFIX='${SecretPrefix}' SETUP_BIND='127.0.0.1' COPYLOBSTA_REPO_DIR='/home/openclaw/copylobsta' node dist/index.js >/tmp/copylobsta-setup-api.log 2>&1 < /dev/null &"
             sleep 2
             # Start temporary HTTPS setup tunnel and capture URL
             SETUP_TUNNEL_URL=""
-            su - openclaw -c "cloudflared tunnel --url http://localhost:8080 --no-autoupdate > /tmp/cloudflared-setup.log 2>&1 &"
+            su - openclaw -c "nohup cloudflared tunnel --url http://localhost:8080 --no-autoupdate >/tmp/cloudflared-setup.log 2>&1 < /dev/null &"
             for i in $(seq 1 30); do
               SETUP_TUNNEL_URL=$(grep -oE "https://[a-z0-9-]+\.trycloudflare\.com" /tmp/cloudflared-setup.log | head -1 || true)
               [ -n "$SETUP_TUNNEL_URL" ] && break
@@ -266,12 +295,15 @@ Resources:
           fi
 
           # Notify CopyLobsta that bootstrap is complete
-          if [ -n "${CallbackUrl}" ] && [ -n "${SessionToken}" ] && [ -n "$SETUP_TUNNEL_URL" ]; then
+          if [ -n "${CallbackUrl}" ] && [ -n "${SessionToken}" ] && [ -n "${CallbackSecret}" ] && [ -n "$SETUP_TUNNEL_URL" ]; then
             INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" http://169.254.169.254/latest/meta-data/instance-id)
             PUBLIC_IP=$(curl -s -H "X-aws-ec2-metadata-token: $(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" http://169.254.169.254/latest/meta-data/public-ipv4)
+            CALLBACK_PAYLOAD=$(printf '{"sessionToken":"%s","instanceId":"%s","instanceIp":"%s","setupBaseUrl":"%s"}' "${SessionToken}" "$INSTANCE_ID" "$PUBLIC_IP" "$SETUP_TUNNEL_URL")
+            CALLBACK_SIGNATURE=$(printf "%s" "$CALLBACK_PAYLOAD" | openssl dgst -sha256 -hmac "${CallbackSecret}" | awk '{print $2}')
             curl -s -X POST "${CallbackUrl}" \
               -H "Content-Type: application/json" \
-              -d "{\"sessionToken\":\"${SessionToken}\",\"instanceId\":\"$INSTANCE_ID\",\"instanceIp\":\"$PUBLIC_IP\",\"setupBaseUrl\":\"$SETUP_TUNNEL_URL\"}" || true
+              -H "x-callback-signature: $CALLBACK_SIGNATURE" \
+              -d "$CALLBACK_PAYLOAD" || true
             echo "Callback sent to CopyLobsta"
           fi
 

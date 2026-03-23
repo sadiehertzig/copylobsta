@@ -128,7 +128,7 @@ ExecStart=$(command -v openclaw || echo /usr/bin/openclaw) gateway --port 18789
 Restart=always
 RestartSec=5
 EnvironmentFile=-%h/.openclaw/.env
-ExecStartPre=/usr/bin/bash -lc 'f="$HOME/.openclaw/.env"; [ -r "$f" ] || { echo "[gateway-preflight] missing or unreadable \$f"; exit 1; }; mode=$(stat -c "%%a" "$f" 2>/dev/null || true); case "$mode" in 600|400) ;; "") ;; *) echo "[gateway-preflight] warning: \$f permissions are \$mode (recommended 600)";; esac; tok=$(grep -E "^OPENCLAW_GATEWAY_TOKEN=" "$f" | tail -n 1 | cut -d= -f2-); [ -n "$tok" ] || { echo "[gateway-preflight] OPENCLAW_GATEWAY_TOKEN missing in \$f"; exit 1; }'
+ExecStartPre=/usr/bin/bash -lc 'test -r /home/openclaw/.openclaw/.env && grep -q "^OPENCLAW_GATEWAY_TOKEN=." /home/openclaw/.openclaw/.env'
 
 [Install]
 WantedBy=default.target
