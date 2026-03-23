@@ -34,7 +34,7 @@ Parameters:
 
   RepoUrl:
     Type: String
-    Default: https://github.com/OpenClaw/CopyLobsta.git
+    Default: https://github.com/sadiehertzig/copylobsta.git
     Description: Runtime git repo URL to clone
 
   RepoRef:
@@ -44,7 +44,7 @@ Parameters:
 
   SetupApiRepoUrl:
     Type: String
-    Default: https://github.com/OpenClaw/CopyLobsta.git
+    Default: https://github.com/sadiehertzig/copylobsta.git
     Description: Repo URL containing the CopyLobsta setup-api source
 
   SetupApiRepoRef:
