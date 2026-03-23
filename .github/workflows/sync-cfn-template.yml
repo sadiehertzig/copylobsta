@@ -1,0 +1,57 @@
+name: Sync CFN Template
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "infra/openclaw-runtime.yaml"
+      - "scripts/sync-template-s3.sh"
+      - ".github/workflows/sync-cfn-template.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sync-template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC Role)
+        if: ${{ secrets.AWS_TEMPLATE_SYNC_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TEMPLATE_SYNC_ROLE_ARN }}
+          aws-region: ${{ vars.COPYLOBSTA_TEMPLATE_S3_REGION || 'us-east-1' }}
+
+      - name: Configure AWS Credentials (Static Keys)
+        if: ${{ secrets.AWS_TEMPLATE_SYNC_ROLE_ARN == '' && secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.COPYLOBSTA_TEMPLATE_S3_REGION || 'us-east-1' }}
+
+      - name: Validate Credentials Configuration
+        env:
+          ROLE: ${{ secrets.AWS_TEMPLATE_SYNC_ROLE_ARN }}
+          AKID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ROLE:-}" ] && { [ -z "${AKID:-}" ] || [ -z "${SECRET:-}" ]; }; then
+            echo "Missing AWS credentials for template sync." >&2
+            echo "Set AWS_TEMPLATE_SYNC_ROLE_ARN (recommended) or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY." >&2
+            exit 1
+          fi
+
+      - name: Sync CloudFormation Template to S3
+        env:
+          COPYLOBSTA_TEMPLATE_S3_BUCKET: ${{ vars.COPYLOBSTA_TEMPLATE_S3_BUCKET || 'copylobsta-templates-373352901751-us-east-1' }}
+          COPYLOBSTA_TEMPLATE_S3_KEY: ${{ vars.COPYLOBSTA_TEMPLATE_S3_KEY || 'openclaw-runtime.yaml' }}
+          COPYLOBSTA_TEMPLATE_S3_REGION: ${{ vars.COPYLOBSTA_TEMPLATE_S3_REGION || 'us-east-1' }}
+        run: |
+          ./scripts/sync-template-s3.sh

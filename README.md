@@ -147,6 +147,24 @@ aws cloudformation create-stack \
 aws ssm start-session --target <instance-id>
 ```
 
+## CloudFormation Template Sync
+
+`infra/openclaw-runtime.yaml` is auto-synced to S3 on every push to `main` via:
+
+- `.github/workflows/sync-cfn-template.yml`
+- `scripts/sync-template-s3.sh`
+
+Required GitHub configuration:
+
+- Repository variable `COPYLOBSTA_TEMPLATE_S3_BUCKET` (optional, defaults to `copylobsta-templates-373352901751-us-east-1`)
+- Repository variable `COPYLOBSTA_TEMPLATE_S3_KEY` (optional, defaults to `openclaw-runtime.yaml`)
+- Repository variable `COPYLOBSTA_TEMPLATE_S3_REGION` (optional, defaults to `us-east-1`)
+- Either:
+  - Secret `AWS_TEMPLATE_SYNC_ROLE_ARN` (recommended, OIDC), or
+  - Secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+
+The sync step uploads the template and verifies SHA-256 round-trip integrity to prevent stale objects.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
