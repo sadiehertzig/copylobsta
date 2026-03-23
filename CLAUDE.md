@@ -6,96 +6,82 @@
 copylobsta/
   README.md
   LICENSE
-  SOUL.md                    — Bot personality (user edits this)
-  USER.md                    — User profile (user edits this)
-  IDENTITY.md                — Bot name/identity
-  AGENTS.md                  — Agent behavior guidelines
-  HEARTBEAT.md               — Heartbeat config
-  TOOLS.md                   — Tool permissions
   CLAUDE.md                  — This file
   agents/
     main/                    — Primary agent
       SOUL.md, USER.md, IDENTITY.md, AGENTS.md, HEARTBEAT.md, TOOLS.md, MEMORY.md
-      skills/                — All skills live here (14 included)
+      skills/
+        copylobsta/          — CopyLobsta skill source of truth
+          server/            — Mini App + onboarding server
+          setup-api/         — Temporary instance-side setup API
+        enable-sharing/      — Helper skill for on-demand sharing
   setup/
     .env.example             — Environment variable template
     openclaw.json.template   — Gateway config template
     install.sh               — Bootstrap script
   infra/
     openclaw-runtime.yaml    — AWS CloudFormation template
+  scripts/
+    sync-template-s3.sh      — Syncs the CFN template to S3 with SHA verification
+  .github/workflows/
+    sync-cfn-template.yml    — Auto-syncs template changes to S3
 ```
 
 ## Agents
 
 There is one agent: `main`. Its skills are in `agents/main/skills/`.
 
+## Source Of Truth
+
+`copylobsta` is now the deployment source of truth for the CopyLobsta skill.
+
+- The CloudFormation bootstrap clones this repo and uses paths inside `agents/main/skills/copylobsta/`.
+- Do not point this repo back at `/home/openclaw/clawdia-hertz-openclaw/...` or any other machine-local absolute path.
+- If a local development workspace wants to consume the skill from elsewhere, that workspace should symlink to this repo, not the reverse.
+- Any change needed by fresh EC2 launches must land here first.
+
 ## Skills
 
-Each skill is a folder inside `agents/main/skills/` containing a `SKILL.md` (and optionally a `README.md`).
+This repo is intentionally narrow. The critical shipped skill is `copylobsta`, plus the small `enable-sharing` helper.
 
-Skills follow the OpenClaw/AgentSkills format:
-- YAML frontmatter with `name`, `description`, and optional `homepage` and `metadata`
-- Markdown body with instructions the agent follows
-- Pure prompt-instruction skills preferred — no executable code unless necessary
+`copylobsta` contains executable code and deployment-critical files:
+- `server/` — Telegram Mini App backend and static assets
+- `setup-api/` — temporary onboarding API started on the launched instance
+- `copylobsta.service` — user service template
+- `run_spotlight.sh` and `injection_scan.sh` — scheduled helpers
 
-### Included Skills
+## Deployment Notes
 
-| Skill | Type | Notes |
-|-------|------|-------|
-| quiz-me | Prompt | Adaptive quizzing |
-| notes-quiz | Prompt | Quiz from uploaded notes |
-| academic-deep-research | Prompt | Rigorous academic research ([kesslerio](https://github.com/kesslerio/academic-deep-research-clawhub-skill)) |
-| creative-writing | Prompt | Writing partner |
-| code-tutor | Prompt | Hints-first coding tutor |
-| college-essay | Prompt | Essay coaching (**see safety rules below**) |
-| three-body-council | Python | Multi-model debate |
-| autoimprove | Prompt | Autonomous optimization loop for any measurable thing |
-| autoimprove-tbc | Python | Three-Body Council self-improvement with fuzzy-task detection |
-| self-improving | Prompt | Self-reflection, self-criticism, and tiered memory for permanent learning |
-| voice-trivia | Express.js | Voice trivia Mini App (port 3456) |
-| copylobsta | TypeScript | Friend onboarding Mini App (port 3457) |
-| api-spend-tracker | Python | API cost tracking |
-| enable-sharing | Prompt | Enable on-demand CopyLobsta sharing mode (copylobsta-specific) |
+- The launch path depends on `infra/openclaw-runtime.yaml` being synced to S3.
+- Template changes should trigger `.github/workflows/sync-cfn-template.yml`.
+- The S3 object metadata should match the latest intended deploy commit before testing a fresh launch.
+- The bootstrap must only reference paths that exist inside this repo on a clean clone.
 
-### Installing Community Skills
+## Local Development
 
-```bash
-cd ~/copylobsta/agents/main/skills
-npx clawhub@latest install author/skill-slug --workdir .
-```
-
-### Creating Custom Skills
-
-1. Create a folder in `agents/main/skills/`
-2. Add a `SKILL.md` with YAML frontmatter and instructions
-3. Optionally add a `README.md` for documentation
-4. Restart OpenClaw to pick up the new skill
-
-### Publishing to ClawHub
-
-```bash
-cd agents/main/skills/skill-name
-npx clawhub@latest login
-npx clawhub@latest publish . --slug skill-name --name "Display Name" --version X.Y.Z --tags latest
-```
+- Host-side runtime state should not be treated as source:
+  - `node_modules/`
+  - `dist/`
+  - `data/sessions/`
+  - logs and `.env`
+- If tests touch session files, make sure live runtime session JSON is not sitting in the tracked repo path.
 
 ## Safety Rules
 
-The `college-essay` skill has strict refusal logic:
-
-- **NEVER** weaken the Non-Negotiables or Disallowed Help sections
-- **NEVER** add capabilities that generate submission-ready essay text
-- The coaching-only boundary must be maintained
+- Never commit secrets, API keys, or `.env` files.
+- Never reintroduce absolute symlinks from this repo into another local checkout.
+- Treat CloudFormation/bootstrap changes as production-critical; a broken path here breaks every new onboarding launch.
 
 ## Do Not Commit
 
-- `memory/` directories — conversation history (in `.gitignore`)
 - `.openclaw/workspace-state.json` — local state
+- `node_modules/`, `dist/`, logs, runtime session data
 - API keys, tokens, or secrets of any kind
 - `.env` files
 
 ## After Making Changes
 
 1. Restart OpenClaw: `systemctl --user restart openclaw-gateway`
-2. Push to GitHub: `git add . && git commit -m "description" && git push origin main`
-3. If updating a ClawHub-published skill, bump the version and republish
+2. If you changed `infra/openclaw-runtime.yaml`, confirm the template sync workflow succeeds
+3. Push to GitHub: `git add . && git commit -m "description" && git push origin main`
+4. For deploy-path changes, verify the live S3 template metadata points at the expected commit before re-testing `/copylobsta`
