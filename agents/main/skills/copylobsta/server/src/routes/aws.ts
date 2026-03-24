@@ -10,7 +10,7 @@ import { resolveTemplateUrl } from "../lib/templateUrl.js";
 import { ensureOnDemandTunnel, refreshTunnelByUrl } from "../lib/tunnelManager.js";
 
 const router = Router();
-const ALLOWED_PROVIDERS = new Set(["anthropic", "gemini", "openai", "telegram"]);
+const ALLOWED_PROVIDERS = new Set(["anthropic", "telegram"]);
 type RawBodyRequest = Request & { rawBody?: string };
 
 function isAllowedSetupHost(hostname: string): boolean {

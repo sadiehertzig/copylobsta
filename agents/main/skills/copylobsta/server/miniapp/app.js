@@ -71,48 +71,21 @@ const CALLBACK_POLL_TIMEOUT_MS = 15 * 60 * 1000;
 // ============================================================
 
 const SOUL_QUESTIONS = [
-  { id: "botName", text: "What do you want to name your bot?", required: true, placeholder: "e.g., Luna, Atlas, Sparky" },
-  { id: "personality", text: "Describe their personality in 3 words.", required: true, placeholder: "e.g., witty, curious, kind" },
-  { id: "vibe", text: "What's their vibe \u2014 sarcastic, warm, dry, chaotic, chill?", required: true, placeholder: "e.g., warm and playful",
-    followups: { sarcastic: "How sarcastic? Light teasing or full roast?", chaotic: "Chaotic how? Random tangents or deliberate chaos?", dry: "Dry like deadpan humor, or more reserved?" } },
-  { id: "relationship", text: "What's your bot's relationship to you? (friend, tutor, mentor, hype-person, chaos agent...)", required: true, placeholder: "e.g., friend and study buddy" },
-  { id: "pushback", text: "Should they push back on you or mostly agree?", required: true, placeholder: "e.g., push back sometimes, but gently" },
-  { id: "neverJoke", text: "What topics should they never joke about?", required: false, placeholder: "e.g., family stuff, grades" },
-  { id: "expertise", text: "Any topics they should be especially knowledgeable about?", required: false, placeholder: "e.g., math, coding, creative writing" },
-  { id: "quirks", text: "Do they have any catchphrases, verbal tics, or stylistic quirks?", required: false, placeholder: "e.g., says 'bet' a lot, uses emoji sparingly" },
-  { id: "frustrated", text: "How do they handle it when you're frustrated or upset?", required: true, placeholder: "e.g., calm me down, give me space, crack a joke" },
-  { id: "character", text: "If your bot were a character in a movie, who would they be?", required: false, placeholder: "e.g., Gandalf, Wednesday Addams" },
+  {
+    id: "personality",
+    text: "Describe the personality you want for your bot in one sentence.",
+    required: true,
+    placeholder: "e.g., Warm, honest, practical, and a little funny",
+  },
 ];
 
-const USER_QUESTIONS_SHARED = [
-  { id: "name", text: "What's your name? (Or what should your bot call you?)", required: true, placeholder: "e.g., Alex" },
-  { id: "role", text: "What do you do? Are you a student, or what's your line of work?", required: true, placeholder: "e.g., high school junior, software engineer, stay-at-home parent" },
-];
-
-const USER_QUESTIONS_STUDENT = [
-  { id: "grade", text: "What grade are you in?", required: true, placeholder: "e.g., 11th grade, college freshman" },
-  { id: "school", text: "What school do you go to? (Optional)", required: false, placeholder: "e.g., Lincoln High" },
-  { id: "subjects", text: "What subjects are you taking this year?", required: true, placeholder: "e.g., AP Bio, Calc AB, English, Spanish" },
-  { id: "helpSubjects", text: "Which subjects do you need the most help with?", required: true, placeholder: "e.g., math and chemistry",
-    followups: { math: "What part of math? Algebra, geometry, calc?", science: "Which science? Bio, chem, physics?", chemistry: "Organic, general, or AP?", physics: "Mechanics, E&M, or modern?" } },
-  { id: "interests", text: "What are you into outside of school?", required: false, placeholder: "e.g., basketball, drawing, coding" },
-  { id: "goals", text: "Any big goals right now? College apps, a project, learning to code?", required: false, placeholder: "e.g., getting into a good CS program",
-    followups: { college: "What year are you applying? Dream school list?", coding: "What language? Beginner, intermediate, or 'I break things and fix them'?", programming: "What language? Beginner, intermediate, or 'I break things and fix them'?" } },
-  { id: "studyStyle", text: "How do you like to study? (flashcards, practice problems, explain-it-to-me style)", required: true, placeholder: "e.g., practice problems and then explain what I got wrong" },
-  { id: "pushOrEasy", text: "Should your bot push you or go easy?", required: true, placeholder: "e.g., push me on studying, go easy on creative stuff" },
-  { id: "anythingElse", text: "Anything else your bot should know about you?", required: false, placeholder: "e.g., I'm a night owl, I have ADHD, I love puns" },
-];
-
-const USER_QUESTIONS_ADULT = [
-  { id: "occupation", text: "What's your job or role?", required: true, placeholder: "e.g., marketing manager, freelance designer" },
-  { id: "botUseCase", text: "What will you mainly use your bot for? (work help, learning, creative projects, staying organized...)", required: true, placeholder: "e.g., brainstorming and research for work" },
-  { id: "expertiseAreas", text: "What topics should your bot be most helpful with?", required: true, placeholder: "e.g., data analysis, writing, project management" },
-  { id: "skillLevel", text: "How would you rate yourself in those areas? (beginner, intermediate, expert, mixed)", required: true, placeholder: "e.g., expert in writing, beginner in data stuff" },
-  { id: "interests", text: "What are you into outside of work?", required: false, placeholder: "e.g., cooking, hiking, sci-fi novels" },
-  { id: "goals", text: "Any big goals right now?", required: false, placeholder: "e.g., launch a side project, learn Python" },
-  { id: "learnStyle", text: "How do you prefer to learn new things? (deep dives, quick summaries, step-by-step, examples first)", required: true, placeholder: "e.g., give me examples first, then explain the theory" },
-  { id: "pushOrEasy", text: "Should your bot challenge you or keep it supportive?", required: true, placeholder: "e.g., challenge me on work stuff, supportive otherwise" },
-  { id: "anythingElse", text: "Anything else your bot should know about you?", required: false, placeholder: "e.g., I work best in the morning, prefer bullet points" },
+const USER_QUESTIONS = [
+  {
+    id: "profile",
+    text: "What is the one most important thing your bot should know about you?",
+    required: true,
+    placeholder: "e.g., I'm a student who wants clear step-by-step help and direct answers",
+  },
 ];
 
 // ============================================================
@@ -131,17 +104,7 @@ function getSoulQuestions() {
 }
 
 function getUserQuestions() {
-  if (!userInterview.branch) return USER_QUESTIONS_SHARED;
-  return [
-    ...USER_QUESTIONS_SHARED,
-    ...(userInterview.branch === "student" ? USER_QUESTIONS_STUDENT : USER_QUESTIONS_ADULT),
-  ];
-}
-
-function detectUserBranch(roleAnswer) {
-  const lower = roleAnswer.toLowerCase();
-  const studentKeywords = ["student", "school", "grade", "college", "university", "freshman", "sophomore", "junior", "senior", "high school", "middle school", "8th", "9th", "10th", "11th", "12th"];
-  return studentKeywords.some((kw) => lower.includes(kw)) ? "student" : "adult";
+  return USER_QUESTIONS;
 }
 
 function checkFollowup(question, answer) {
@@ -207,11 +170,6 @@ function handleInterviewNext(prefix, getQuestions, state, onComplete) {
   }
 
   if (answer) state.answers[q.id] = answer;
-
-  // Detect branch for user interview after role question
-  if (prefix === "user" && q.id === "role" && answer) {
-    state.branch = detectUserBranch(answer);
-  }
 
   // Check for followup
   if (!state.followupActive && answer) {
@@ -397,8 +355,6 @@ const STEP_LABELS = {
   INSTANCE_VERIFY: "Server Verify",
   CRED_GITHUB: "GitHub",
   CRED_ANTHROPIC: "Anthropic Key",
-  CRED_GEMINI: "Gemini Key",
-  CRED_OPENAI: "OpenAI Key",
   CRED_TELEGRAM: "Telegram Bot",
   SOUL_INTERVIEW: "Bot Personality",
   SOUL_REVIEW: "Personality Review",
@@ -438,6 +394,13 @@ async function loadSession() {
     }
 
     showScreen(currentSession.state);
+
+    if (startParam) {
+      urlParams.delete("start");
+      const nextQuery = urlParams.toString();
+      const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash || ""}`;
+      window.history.replaceState({}, "", nextUrl);
+    }
   } catch (err) {
     console.error("Failed to load session:", err);
     showError(err.message || "Failed to connect to CopyLobsta server.");
@@ -853,13 +816,7 @@ document.querySelectorAll(".phase-next").forEach((btn) => {
 
 // Key validation buttons
 document.getElementById("btn-validate-anthropic")?.addEventListener("click", () => validateKey("anthropic"));
-document.getElementById("btn-validate-gemini")?.addEventListener("click", () => validateKey("gemini"));
-document.getElementById("btn-validate-openai")?.addEventListener("click", () => validateKey("openai"));
 document.getElementById("btn-validate-telegram")?.addEventListener("click", () => validateKey("telegram"));
-
-// Skip buttons
-document.getElementById("btn-skip-gemini")?.addEventListener("click", (e) => { e.preventDefault(); skipProvider("gemini"); });
-document.getElementById("btn-skip-openai")?.addEventListener("click", (e) => { e.preventDefault(); skipProvider("openai"); });
 
 // Password visibility toggles
 document.querySelectorAll(".btn-toggle-vis").forEach((btn) => {

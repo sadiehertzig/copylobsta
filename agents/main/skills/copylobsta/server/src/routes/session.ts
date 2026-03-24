@@ -49,6 +49,9 @@ router.post("/api/session", (req, res) => {
     }
 
     const referral = startParam ? referralStore.get(startParam) : undefined;
+    if (startParam && !referral) {
+      throw new Error("This launch link is stale. Re-open CopyLobsta from the latest Telegram message.");
+    }
     const forceFresh = freshRequested || !!referral?.forceFresh;
 
     // Issue a session token (client stores it for subsequent requests)
