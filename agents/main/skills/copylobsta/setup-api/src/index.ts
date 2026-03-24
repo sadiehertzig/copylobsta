@@ -12,7 +12,9 @@ import express from "express";
 import cors from "cors";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { homedir } from "node:os";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { validateKey } from "./keyValidator.js";
 import { readSecret, writeSecret } from "./secretsWriter.js";
 
@@ -20,6 +22,8 @@ const PORT = parseInt(process.env.SETUP_API_PORT || "8080", 10);
 const BIND_ADDR = process.env.SETUP_BIND || "127.0.0.1";
 const SESSION_TOKEN = process.env.SESSION_TOKEN || "";
 const AUTO_SHUTDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+const DEFAULT_REPO_DIR = resolve(MODULE_DIR, "..", "..", "..", "..", "..", "..");
 
 if (!SESSION_TOKEN) {
   console.error("SESSION_TOKEN environment variable is required");
@@ -128,9 +132,13 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
   const deployAsync = async () => {
     const { writeFile } = await import("node:fs/promises");
 
-    const homeDir = process.env.HOME || "/home/openclaw";
-    const repoDir = resolve(process.env.COPYLOBSTA_REPO_DIR || resolve(homeDir, "copylobsta"));
-    const allowedRepoRoots = [resolve(homeDir, "copylobsta")];
+    const homeDir = process.env.HOME || homedir();
+    const npmGlobalBin = process.env.NPM_GLOBAL_BIN || resolve(homeDir, ".npm-global", "bin");
+    const repoDir = resolve(process.env.COPYLOBSTA_REPO_DIR || DEFAULT_REPO_DIR);
+    const allowedRepoRoots = Array.from(new Set([
+      DEFAULT_REPO_DIR,
+      resolve(homeDir, "copylobsta"),
+    ]));
 
     // Step 1: Verify repo exists (no git pull from moving HEAD)
     await runDeployStep("clone_repo", async () => {
@@ -166,13 +174,13 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
 
     // Step 3: Write SOUL.md
     await runDeployStep("write_soul", async () => {
-      await writeFile(resolve(repoDir, "SOUL.md"), soulMarkdown, "utf-8");
+      await writeFile(resolve(repoDir, "agents", "main", "SOUL.md"), soulMarkdown, "utf-8");
     });
 
     // Step 4: Write USER.md
     await runDeployStep("write_user", async () => {
       if (userMarkdown) {
-        await writeFile(resolve(repoDir, "USER.md"), userMarkdown, "utf-8");
+        await writeFile(resolve(repoDir, "agents", "main", "USER.md"), userMarkdown, "utf-8");
       }
     });
 
@@ -234,7 +242,7 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
 
       const cfgEnv = {
         ...process.env,
-        PATH: `/home/openclaw/.npm-global/bin:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
+        PATH: `${npmGlobalBin}:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
       };
 
       let existingExtraDirs: string[] = [];
@@ -329,7 +337,7 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
       const uid = execFileSync("id", ["-u"], { stdio: "pipe" }).toString().trim();
       const env = {
         ...process.env,
-        PATH: `/home/openclaw/.npm-global/bin:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
+        PATH: `${npmGlobalBin}:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
         XDG_RUNTIME_DIR: `/run/user/${uid}`,
       };
       const nodeMajor = Number(
@@ -415,7 +423,7 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
         const uid = execFileSync("id", ["-u"], { stdio: "pipe" }).toString().trim();
         const env = {
           ...process.env,
-          PATH: `/home/openclaw/.npm-global/bin:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
+          PATH: `${npmGlobalBin}:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
           XDG_RUNTIME_DIR: `/run/user/${uid}`,
         };
         let status = "unknown";

@@ -77,6 +77,14 @@ if ! grep -q "TRIVIA_VOICE_BASE_URL=" "$ENV_FILE" 2>/dev/null || \
   echo "Set TRIVIA_VOICE_BASE_URL=http://localhost:$TRIVIA_PORT"
 fi
 
+# --- Set TRIVIA_TUNNEL_NAME default if missing ---
+if ! grep -q "TRIVIA_TUNNEL_NAME=" "$ENV_FILE" 2>/dev/null; then
+  echo "" >> "$ENV_FILE"
+  echo "# Named Cloudflare tunnel for stable trivia voice URL (see HARDENING.md)" >> "$ENV_FILE"
+  echo "TRIVIA_TUNNEL_NAME=trivia-voice" >> "$ENV_FILE"
+  echo "Set default TRIVIA_TUNNEL_NAME=trivia-voice"
+fi
+
 # --- Generate CopyLobsta launch secret if not set ---
 if ! grep -q "COPYLOBSTA_LAUNCH_SECRET=" "$ENV_FILE" 2>/dev/null || \
    grep -q "COPYLOBSTA_LAUNCH_SECRET=$" "$ENV_FILE" 2>/dev/null; then
@@ -129,13 +137,15 @@ else
 fi
 
 # Copy skill services (always refresh templates for safety updates)
-for service in voice-trivia/trivia-voice.service copylobsta/copylobsta.service; do
+for service in voice-trivia/trivia-voice.service voice-trivia/trivia-voice-tunnel.service copylobsta/copylobsta.service; do
   SERVICE_FILE="$REPO_DIR/agents/main/skills/$service"
   SERVICE_NAME=$(basename "$service")
   if [ -f "$SERVICE_FILE" ]; then
     # Expand the service template's repo path to this install location.
     # systemd WorkingDirectory does not expand shell/env vars.
     sed -e "s#%h/copylobsta#$REPO_DIR#g" \
+        -e "s#%h/clawdia-hertz-openclaw#$REPO_DIR#g" \
+        -e "s#agents/clawdia/skills#agents/main/skills#g" \
         "$SERVICE_FILE" > "$SYSTEMD_DIR/$SERVICE_NAME"
     echo "  Installed $SERVICE_NAME"
   fi
@@ -256,10 +266,17 @@ echo "=== Setup Complete ==="
 echo ""
 echo "Next steps:"
 echo "  1. Edit $ENV_FILE with your API keys and bot token"
-echo "  2. Edit $REPO_DIR/SOUL.md to customize your bot's personality"
-echo "  3. Edit $REPO_DIR/USER.md to tell your bot about yourself"
+echo "  2. Edit $REPO_DIR/agents/main/SOUL.md to customize your bot's personality"
+echo "  3. Edit $REPO_DIR/agents/main/USER.md to tell your bot about yourself"
 echo "  4. Start the gateway: systemctl --user start openclaw-gateway"
 echo "  5. (Optional) Start Mini App services:"
 echo "     systemctl --user start trivia-voice"
 echo "     systemctl --user start copylobsta"
+echo ""
+echo "  6. (Recommended) Set up a named Cloudflare tunnel for stable voice trivia URL:"
+echo "     cloudflared tunnel create trivia-voice"
+echo "     cloudflared tunnel route dns trivia-voice trivia.yourdomain.com"
+echo "     Set APP_BASE_URL=https://trivia.yourdomain.com in $ENV_FILE"
+echo "     systemctl --user enable --now trivia-voice-tunnel"
+echo "     See agents/main/skills/voice-trivia/HARDENING.md for details."
 echo ""

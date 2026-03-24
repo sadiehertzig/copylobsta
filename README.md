@@ -80,15 +80,15 @@ bash ~/copylobsta/scripts/injection_scan.sh
 
 ### Personality
 
-Edit [SOUL.md](SOUL.md) to define your bot's personality, tone, and values. This is the most important file — it shapes every interaction.
+Edit [agents/main/SOUL.md](agents/main/SOUL.md) to define your bot's personality, tone, and values. This is the most important file — it shapes every interaction.
 
 ### User Profile
 
-Edit [USER.md](USER.md) to tell your bot about yourself — interests, goals, communication preferences. The bot uses this to personalize responses.
+Edit [agents/main/USER.md](agents/main/USER.md) to tell your bot about yourself — interests, goals, communication preferences. The bot uses this to personalize responses.
 
 ### Identity
 
-Edit [IDENTITY.md](IDENTITY.md) to set your bot's name and basic identity.
+Edit [agents/main/IDENTITY.md](agents/main/IDENTITY.md) to set your bot's name and basic identity.
 
 ## Installing Community Skills
 

@@ -14,18 +14,19 @@ if [ -L "$SKILL_DIR" ]; then
   exit 1
 fi
 
-CLAWDIA_DIR="${CLAWDIA_REPO_DIR:-/home/openclaw/clawdia-hertz-openclaw}"
-CLAWDIA_LINK="$CLAWDIA_DIR/agents/clawdia/skills/copylobsta"
-if [ -e "$CLAWDIA_LINK" ]; then
-  if [ ! -L "$CLAWDIA_LINK" ]; then
-    echo "Expected $CLAWDIA_LINK to be a symlink into copylobsta." >&2
-    exit 1
-  fi
-  resolved="$(readlink -f "$CLAWDIA_LINK")"
-  expected="$(readlink -f "$SKILL_DIR")"
-  if [ "$resolved" != "$expected" ]; then
-    echo "Clawdia copylobsta link target mismatch: $resolved != $expected" >&2
-    exit 1
+if [ -n "${CLAWDIA_REPO_DIR:-}" ]; then
+  CLAWDIA_LINK="$CLAWDIA_REPO_DIR/agents/clawdia/skills/copylobsta"
+  if [ -e "$CLAWDIA_LINK" ]; then
+    if [ ! -L "$CLAWDIA_LINK" ]; then
+      echo "Expected $CLAWDIA_LINK to be a symlink into copylobsta." >&2
+      exit 1
+    fi
+    resolved="$(readlink -f "$CLAWDIA_LINK")"
+    expected="$(readlink -f "$SKILL_DIR")"
+    if [ "$resolved" != "$expected" ]; then
+      echo "Clawdia copylobsta link target mismatch: $resolved != $expected" >&2
+      exit 1
+    fi
   fi
 fi
 
