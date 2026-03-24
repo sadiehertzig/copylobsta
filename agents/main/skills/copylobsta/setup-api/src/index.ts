@@ -296,6 +296,12 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
         { timeout: 30_000, stdio: "pipe", env },
       );
 
+      // Start the gateway (install only creates/enables the unit file).
+      execFileSync(
+        "systemctl", ["--user", "start", "openclaw-gateway"],
+        { timeout: 15_000, stdio: "pipe", env },
+      );
+
       // Give the gateway a moment to start, then verify it's running.
       await new Promise((r) => setTimeout(r, 2000));
       let status = "unknown";
