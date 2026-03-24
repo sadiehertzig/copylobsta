@@ -290,6 +290,14 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
         );
       }
 
+      // New OpenClaw versions block gateway start when mode is unset.
+      // Force local mode for single-host CopyLobsta deployments.
+      execFileSync(
+        "openclaw",
+        ["config", "set", "gateway.mode", "local"],
+        { timeout: 10_000, stdio: "pipe", env },
+      );
+
       execFileSync(
         "openclaw",
         ["gateway", "install", "--force", "--runtime", "node", "--port", "18789"],
