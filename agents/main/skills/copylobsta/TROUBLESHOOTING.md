@@ -12,18 +12,29 @@ CloudFormation Quick Create expects an HTTPS **S3 object URL**, not `raw.githubu
 5. Relaunch `/copylobsta` and tap **Launch on AWS** again
 
 ### Recommended template source
-If you already have a stable S3 object URL in `CFN_TEMPLATE_URL`, CopyLobsta now prefers that because it avoids mobile/webview signature-expiry issues.
+Default to pre-signed S3 URLs for private template buckets:
+1. Set `COPYLOBSTA_TEMPLATE_MODE=presigned`
+2. Set `COPYLOBSTA_TEMPLATE_S3_BUCKET` and `COPYLOBSTA_TEMPLATE_S3_KEY` in `~/.openclaw/.env`
+3. Optional: set `COPYLOBSTA_TEMPLATE_S3_REGION` and `COPYLOBSTA_TEMPLATE_URL_TTL_SECONDS`
+4. Ensure the host IAM role/user can sign `s3:GetObject` for that bucket/key
+5. Restart CopyLobsta service (`systemctl --user restart copylobsta`)
 
-Use pre-signed S3 URLs only when the template object is private and cannot be served from a stable S3 URL:
-1. Set `COPYLOBSTA_TEMPLATE_S3_BUCKET` and `COPYLOBSTA_TEMPLATE_S3_KEY` in `~/.openclaw/.env`
-2. Optional: set `COPYLOBSTA_TEMPLATE_S3_REGION` and `COPYLOBSTA_TEMPLATE_URL_TTL_SECONDS`
-3. Ensure the host IAM role/user can `s3:GetObject` for that bucket/key
+Use static mode only when CloudFormation can fetch the object directly:
+1. Set `COPYLOBSTA_TEMPLATE_MODE=static`
+2. Set `CFN_TEMPLATE_URL` to a CloudFormation-readable S3 object URL
+3. Confirm the object is public or otherwise readable by CloudFormation
 4. Restart CopyLobsta service (`systemctl --user restart copylobsta`)
+
+### "AccessDenied" on the template URL in AWS Console
+Your CloudFormation quick-create page is using a static S3 URL that AWS cannot read.
+1. If your bucket is private, switch to `COPYLOBSTA_TEMPLATE_MODE=presigned`
+2. If you want static mode, make sure the specific template object is readable by CloudFormation
+3. Fully close and reopen the Telegram Mini App before generating a new AWS launch link
 
 ### "CFN_TEMPLATE_URL is not configured"
 CopyLobsta cannot generate the AWS launch link without a template URL.
-1. Prefer setting `CFN_TEMPLATE_URL=...` to a valid S3 HTTPS object URL
-2. Or set `COPYLOBSTA_TEMPLATE_S3_BUCKET` + `COPYLOBSTA_TEMPLATE_S3_KEY` for pre-signed URLs
+1. In `presigned` mode, set `COPYLOBSTA_TEMPLATE_S3_BUCKET` + `COPYLOBSTA_TEMPLATE_S3_KEY`
+2. In `static` mode, set `CFN_TEMPLATE_URL=...` to a valid S3 HTTPS object URL
 3. Restart CopyLobsta service (`systemctl --user restart copylobsta`)
 4. Relaunch `/copylobsta` and tap **Launch on AWS** again
 

@@ -3,7 +3,9 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 
 import { CFN_TEMPLATE_URL, PORT, SHARING_ENABLED, TEMPLATE_S3_BUCKET, TEMPLATE_S3_KEY } from "./config.js";
+import { getRuntimeGitSha } from "./lib/runtimeInfo.js";
 import { containsSecrets, redactSecrets } from "./lib/security.js";
+import { getTemplateMode, validateTemplateSourceConfig } from "./lib/templateUrl.js";
 import healthRouter from "./routes/health.js";
 import launchRouter from "./routes/launch.js";
 import sessionRouter from "./routes/session.js";
@@ -69,11 +71,11 @@ app.use((req, res, next) => {
 });
 
 if (SHARING_ENABLED) {
-  const hasStaticTemplate = !!CFN_TEMPLATE_URL;
-  const hasPresignTemplate = !!TEMPLATE_S3_BUCKET && !!TEMPLATE_S3_KEY;
-  if (!hasStaticTemplate && !hasPresignTemplate) {
+  try {
+    validateTemplateSourceConfig();
+  } catch (err) {
     console.error(
-      "Missing template source: set COPYLOBSTA_TEMPLATE_S3_BUCKET + COPYLOBSTA_TEMPLATE_S3_KEY (recommended), or CFN_TEMPLATE_URL.",
+      err instanceof Error ? err.message : String(err),
     );
     process.exit(1);
   }
@@ -177,6 +179,12 @@ app.use(soulRouter);
 app.use(userRouter);
 
 app.listen(PORT, "127.0.0.1", () => {
+  const templateMode = SHARING_ENABLED ? getTemplateMode() : "disabled";
+  const templateSources = [
+    CFN_TEMPLATE_URL ? "static" : null,
+    TEMPLATE_S3_BUCKET && TEMPLATE_S3_KEY ? "presigned" : null,
+  ].filter(Boolean).join(",");
   console.log(`CopyLobsta server running on http://127.0.0.1:${PORT}`);
   console.log(`Mini App local URL: http://127.0.0.1:${PORT}/miniapp/`);
+  console.log(`Runtime build: git=${getRuntimeGitSha()} templateMode=${templateMode} sources=${templateSources || "none"}`);
 });

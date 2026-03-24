@@ -165,6 +165,22 @@ Required GitHub configuration:
 
 The sync step uploads the template and verifies SHA-256 round-trip integrity to prevent stale objects.
 
+## Validation Gate
+
+Run this before pushing CopyLobsta runtime/bootstrap changes:
+
+```bash
+./scripts/validate-copylobsta.sh
+```
+
+It checks:
+
+- source-of-truth ownership wiring
+- bootstrap script syntax and required file paths
+- server test + build
+- setup-api test + build
+- a local AWS quick-create smoke test
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

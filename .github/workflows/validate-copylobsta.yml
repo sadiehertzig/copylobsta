@@ -1,0 +1,47 @@
+name: Validate CopyLobsta
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "agents/main/skills/copylobsta/**"
+      - "infra/openclaw-runtime.yaml"
+      - "scripts/**"
+      - ".github/workflows/validate-copylobsta.yml"
+  pull_request:
+    paths:
+      - "agents/main/skills/copylobsta/**"
+      - "infra/openclaw-runtime.yaml"
+      - "scripts/**"
+      - ".github/workflows/validate-copylobsta.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      COPYLOBSTA_TEMPLATE_MODE: static
+      CFN_TEMPLATE_URL: https://s3.us-east-1.amazonaws.com/example-bucket/openclaw-runtime.yaml
+      COPYLOBSTA_EXPECT_TEMPLATE_MODE: static
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            agents/main/skills/copylobsta/server/package-lock.json
+            agents/main/skills/copylobsta/setup-api/package-lock.json
+
+      - name: Install server deps
+        working-directory: agents/main/skills/copylobsta/server
+        run: npm ci
+
+      - name: Install setup-api deps
+        working-directory: agents/main/skills/copylobsta/setup-api
+        run: npm ci
+
+      - name: Validate CopyLobsta
+        run: ./scripts/validate-copylobsta.sh

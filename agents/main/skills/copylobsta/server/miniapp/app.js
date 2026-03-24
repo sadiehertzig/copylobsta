@@ -57,6 +57,7 @@ function persistSessionToken(token) {
 let currentSession = null;
 let setupToken = null;
 let sessionToken = loadStoredSessionToken(); // Issued by server for non-web_app opens (plain URL buttons)
+let awsLaunchMeta = null;
 let pollTimer = null;
 let pollTimeoutTimer = null;
 let pollErrorCount = 0;
@@ -267,6 +268,7 @@ function showScreen(screenId) {
     target.classList.add("active");
     updateStepBadges();
     // Auto-actions for certain screens
+    if (screenId === "AWS_LAUNCH") resetAwsLaunchUi();
     if (screenId === "INSTANCE_VERIFY") autoVerifyInstance();
     if (screenId === "SOUL_INTERVIEW") renderInterview("soul", getSoulQuestions(), soulInterview);
     if (screenId === "USER_INTERVIEW") renderInterview("user", getUserQuestions(), userInterview);
@@ -484,12 +486,14 @@ async function handleAwsSignupDone() {
 
 async function handleCfnLaunch() {
   try {
-    const data = await apiCall("GET", "/api/aws/quick-create-url");
+    const data = await apiCall("POST", "/api/aws/quick-create-url");
+    awsLaunchMeta = data;
     const manualLink = document.getElementById("btn-aws-open-manual");
     if (manualLink) {
       manualLink.href = data.url;
       manualLink.classList.remove("hidden");
     }
+    renderAwsLaunchMeta(data);
     const statusEl = document.getElementById("aws-launch-status");
     if (statusEl) {
       statusEl.classList.add("hidden");
@@ -527,6 +531,50 @@ function clearAwsPolling() {
     clearTimeout(pollTimeoutTimer);
     pollTimeoutTimer = null;
   }
+}
+
+function resetAwsLaunchUi() {
+  clearAwsPolling();
+  awsLaunchMeta = null;
+  setupToken = null;
+
+  document.getElementById("aws-launch-info")?.classList.remove("hidden");
+  document.getElementById("aws-launch-waiting")?.classList.add("hidden");
+  document.getElementById("aws-launch-done")?.classList.add("hidden");
+  document.getElementById("btn-aws-recheck")?.classList.add("hidden");
+
+  const manualLink = document.getElementById("btn-aws-open-manual");
+  if (manualLink) {
+    manualLink.removeAttribute("href");
+    manualLink.classList.add("hidden");
+  }
+
+  const statusEl = document.getElementById("aws-launch-status");
+  if (statusEl) {
+    statusEl.classList.add("hidden");
+    statusEl.textContent = "";
+  }
+
+  const metaEl = document.getElementById("aws-launch-link-meta");
+  if (metaEl) {
+    metaEl.classList.add("hidden");
+    metaEl.textContent = "";
+  }
+}
+
+function renderAwsLaunchMeta(data) {
+  const metaEl = document.getElementById("aws-launch-link-meta");
+  if (!metaEl) return;
+
+  const issued = data?.issuedAt ? new Date(data.issuedAt) : null;
+  const expires = data?.expiresAt ? new Date(data.expiresAt) : null;
+  const issuedText = issued && !Number.isNaN(issued.getTime()) ? issued.toLocaleTimeString() : "just now";
+  const expiresText = expires && !Number.isNaN(expires.getTime())
+    ? `, expires ${expires.toLocaleTimeString()}`
+    : "";
+
+  metaEl.textContent = `Fresh AWS link generated ${issuedText} using ${data.mode} mode${expiresText}.`;
+  metaEl.classList.remove("hidden");
 }
 
 function startCallbackPolling() {

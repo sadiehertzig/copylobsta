@@ -98,10 +98,10 @@ router.post("/api/aws/check", (req, res) => {
 });
 
 /**
- * GET /api/aws/quick-create-url
- * Generates a CloudFormation quick-create URL with a unique session token.
+ * POST /api/aws/quick-create-url
+ * Generates a one-shot CloudFormation quick-create URL with a unique session token.
  */
-router.get("/api/aws/quick-create-url", async (req, res) => {
+router.post("/api/aws/quick-create-url", async (req, res) => {
   try {
     const initData = req.headers["x-telegram-init-data"] as string || "";
     const sessionToken = req.headers["x-session-token"] as string || "";
@@ -167,10 +167,10 @@ router.get("/api/aws/quick-create-url", async (req, res) => {
     const token = generateSessionToken();
     const callbackSecret = generateSessionToken();
     sessionStore.update(user.id, { setupToken: token, callbackSecret });
-    const templateUrl = await resolveTemplateUrl();
+    const template = await resolveTemplateUrl();
 
     const url = buildQuickCreateUrl({
-      templateUrl,
+      templateUrl: template.url,
       sessionToken: token,
       callbackSecret,
       callbackUrl: `${callbackBase}/api/aws/instance-callback`,
@@ -181,7 +181,12 @@ router.get("/api/aws/quick-create-url", async (req, res) => {
       Pragma: "no-cache",
       Expires: "0",
     });
-    res.json({ url });
+    res.json({
+      url,
+      mode: template.mode,
+      issuedAt: template.issuedAt,
+      expiresAt: template.expiresAt,
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(400).json({ error: message });
