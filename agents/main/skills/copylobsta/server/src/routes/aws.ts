@@ -176,6 +176,11 @@ router.get("/api/aws/quick-create-url", async (req, res) => {
       callbackUrl: `${callbackBase}/api/aws/instance-callback`,
     });
 
+    res.set({
+      "Cache-Control": "no-store, no-cache, must-revalidate, private",
+      Pragma: "no-cache",
+      Expires: "0",
+    });
     res.json({ url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

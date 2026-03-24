@@ -18,10 +18,19 @@ function getPresignTtlSeconds(): number {
 
 /** Resolve CloudFormation template URL.
  *  Priority:
- *  1) S3 pre-signed URL when COPYLOBSTA_TEMPLATE_S3_BUCKET + COPYLOBSTA_TEMPLATE_S3_KEY are set
- *  2) Static CFN_TEMPLATE_URL fallback
+ *  1) Static CFN_TEMPLATE_URL when configured
+ *  2) S3 pre-signed URL when COPYLOBSTA_TEMPLATE_S3_BUCKET + COPYLOBSTA_TEMPLATE_S3_KEY are set
+ *
+ *  Rationale:
+ *  - A static S3 object URL avoids time-window failures in mobile/webview launches.
+ *  - The template itself must not contain secrets; sensitive values are passed separately
+ *    as CloudFormation parameters.
  */
 export async function resolveTemplateUrl(): Promise<string> {
+  if (CFN_TEMPLATE_URL) {
+    return CFN_TEMPLATE_URL;
+  }
+
   const hasBucket = !!TEMPLATE_S3_BUCKET;
   const hasKey = !!TEMPLATE_S3_KEY;
 
@@ -39,10 +48,7 @@ export async function resolveTemplateUrl(): Promise<string> {
     return getSignedUrl(s3, command, { expiresIn: getPresignTtlSeconds() });
   }
 
-  if (!CFN_TEMPLATE_URL) {
-    throw new Error(
-      "Template source is not configured. Set COPYLOBSTA_TEMPLATE_S3_BUCKET + COPYLOBSTA_TEMPLATE_S3_KEY (recommended), or CFN_TEMPLATE_URL.",
-    );
-  }
-  return CFN_TEMPLATE_URL;
+  throw new Error(
+    "Template source is not configured. Set CFN_TEMPLATE_URL, or configure COPYLOBSTA_TEMPLATE_S3_BUCKET + COPYLOBSTA_TEMPLATE_S3_KEY for pre-signed fallback.",
+  );
 }

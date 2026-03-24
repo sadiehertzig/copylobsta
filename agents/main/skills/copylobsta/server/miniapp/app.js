@@ -352,6 +352,7 @@ async function apiCall(method, path, body) {
   if (sessionToken) headers["x-session-token"] = sessionToken;
 
   const opts = { method, headers };
+  if (method === "GET") opts.cache = "no-store";
   if (body) opts.body = JSON.stringify(body);
   let res = await fetch(`${API_BASE}${path}`, opts);
   let data = await res.json().catch(() => ({}));
@@ -362,6 +363,7 @@ async function apiCall(method, path, body) {
     };
     if (sessionToken) retryHeaders["x-session-token"] = sessionToken;
     const retryOpts = { method, headers: retryHeaders };
+    if (method === "GET") retryOpts.cache = "no-store";
     if (body) retryOpts.body = JSON.stringify(body);
     res = await fetch(`${API_BASE}${path}`, retryOpts);
     data = await res.json().catch(() => ({}));

@@ -232,8 +232,11 @@ if [ -f "$SCAN_SCRIPT" ]; then
     if crontab -l 2>/dev/null | grep -q "openclaw-injection-scan"; then
       echo "  Injection scan cron already exists — skipping."
     else
-      (crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
-      echo "  Scheduled daily injection scan at 3 AM."
+      if (crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -; then
+        echo "  Scheduled daily injection scan at 3 AM."
+      else
+        echo "  WARNING: failed to install injection scan cron; continuing without it."
+      fi
     fi
   fi
 fi
@@ -251,8 +254,11 @@ if [ -f "$SPOTLIGHT_SCRIPT" ]; then
     if crontab -l 2>/dev/null | grep -q "openclaw-spotlight"; then
       echo "  Spotlight cron already exists — skipping."
     else
-      (crontab -l 2>/dev/null; echo "$SPOTLIGHT_CRON") | crontab -
-      echo "  Scheduled daily spotlight at 11:30 UTC."
+      if (crontab -l 2>/dev/null; echo "$SPOTLIGHT_CRON") | crontab -; then
+        echo "  Scheduled daily spotlight at 11:30 UTC."
+      else
+        echo "  WARNING: failed to install spotlight cron; continuing without it."
+      fi
     fi
   fi
 fi
