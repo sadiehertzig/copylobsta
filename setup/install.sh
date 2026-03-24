@@ -17,15 +17,15 @@ warn_missing_crontab() {
 
 # --- Check Node.js ---
 if ! command -v node &>/dev/null; then
-  echo "ERROR: Node.js not found. Install Node.js 20+ first."
-  echo "  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -"
+  echo "ERROR: Node.js not found. Install Node.js 22+ first."
+  echo "  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -"
   echo "  sudo apt-get install -y nodejs"
   exit 1
 fi
 
 NODE_VERSION=$(node -v | sed 's/v//' | cut -d. -f1)
-if [ "$NODE_VERSION" -lt 20 ]; then
-  echo "ERROR: Node.js $NODE_VERSION found, but 20+ is required."
+if [ "$NODE_VERSION" -lt 22 ]; then
+  echo "ERROR: Node.js $NODE_VERSION found, but 22+ is required."
   exit 1
 fi
 echo "Node.js $(node -v) found."
@@ -120,25 +120,13 @@ echo "Setting up systemd services..."
 SYSTEMD_DIR="$HOME/.config/systemd/user"
 mkdir -p "$SYSTEMD_DIR"
 
-# OpenClaw gateway service (always refresh template for safe defaults)
-cat > "$SYSTEMD_DIR/openclaw-gateway.service" <<EOT
-[Unit]
-Description=OpenClaw Gateway
-After=network-online.target
-
-[Service]
-Type=simple
-ExecStart=$(command -v openclaw || echo /usr/bin/openclaw) gateway --port 18789
-Restart=always
-RestartSec=5
-EnvironmentFile=-%h/.openclaw/.env
-ExecStartPre=/usr/bin/test -r /home/openclaw/.openclaw/.env
-ExecStartPre=/usr/bin/grep -q ^OPENCLAW_GATEWAY_TOKEN=. /home/openclaw/.openclaw/.env
-
-[Install]
-WantedBy=default.target
-EOT
-echo "  Installed openclaw-gateway.service"
+# OpenClaw gateway service
+export PATH="$HOME/.npm-global/bin:$PATH"
+if openclaw gateway install --force --runtime node --port 18789 >/dev/null 2>&1; then
+  echo "  Installed openclaw-gateway.service via OpenClaw CLI"
+else
+  echo "  WARNING: openclaw gateway install failed. The gateway service may not start."
+fi
 
 # Copy skill services (always refresh templates for safety updates)
 for service in voice-trivia/trivia-voice.service copylobsta/copylobsta.service; do

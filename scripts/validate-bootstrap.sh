@@ -31,5 +31,6 @@ echo "[bootstrap] user-data path check"
 grep -q 'bash setup/install.sh' infra/openclaw-runtime.yaml
 grep -q 'copylobsta-setup-api-src' infra/openclaw-runtime.yaml
 grep -q 'COPYLOBSTA_REPO_DIR' setup/install.sh
+grep -q 'NODE_MAJOR=22' infra/openclaw-runtime.yaml
 
 echo "[bootstrap] ok"

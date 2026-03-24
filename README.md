@@ -27,7 +27,7 @@ systemctl --user start openclaw-gateway
 
 ### Prerequisites
 
-- **Node.js 20+** — the setup script will check for this
+- **Node.js 22+** — the setup script will check for this
 - **A Telegram bot token** — get one from [@BotFather](https://t.me/BotFather)
 - **At least one AI provider API key** — Anthropic, OpenAI, or Google Gemini
 

@@ -230,14 +230,29 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
 
     await runDeployStep("start_pm2", async () => {
       const uid = execFileSync("id", ["-u"], { stdio: "pipe" }).toString().trim();
-      const env = { ...process.env, XDG_RUNTIME_DIR: `/run/user/${uid}` };
+      const env = {
+        ...process.env,
+        PATH: `/home/openclaw/.npm-global/bin:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
+        XDG_RUNTIME_DIR: `/run/user/${uid}`,
+      };
+      const nodeMajor = Number(
+        execFileSync("node", ["-p", "process.versions.node.split('.')[0]"], {
+          timeout: 5_000,
+          stdio: "pipe",
+          env,
+        }).toString().trim(),
+      );
+      if (!Number.isFinite(nodeMajor) || nodeMajor < 22) {
+        throw new Error(
+          `Node.js 22+ is required for OpenClaw. This instance has Node ${nodeMajor || "unknown"}. Delete the CloudFormation stack and relaunch to provision a fresh instance.`,
+        );
+      }
 
-      execFileSync("systemctl", ["--user", "daemon-reload"], {
-        timeout: 10_000, stdio: "pipe", env,
-      });
-      execFileSync("systemctl", ["--user", "enable", "--now", "openclaw-gateway"], {
-        timeout: 20_000, stdio: "pipe", env,
-      });
+      execFileSync(
+        "openclaw",
+        ["gateway", "install", "--force", "--runtime", "node", "--port", "18789"],
+        { timeout: 30_000, stdio: "pipe", env },
+      );
 
       // Give the gateway a moment to start, then verify it's running.
       await new Promise((r) => setTimeout(r, 2000));
