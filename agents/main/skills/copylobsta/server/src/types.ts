@@ -6,6 +6,8 @@ export type SessionState =
   | "INSTANCE_VERIFY"
   | "CRED_GITHUB"
   | "CRED_ANTHROPIC"
+  | "CRED_GEMINI"
+  | "CRED_OPENAI"
   | "CRED_TELEGRAM"
   | "SOUL_INTERVIEW"
   | "SOUL_REVIEW"

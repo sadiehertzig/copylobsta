@@ -351,6 +351,187 @@
       </div>
     </div>
 
+    <!-- Gemini -->
+    <div id="screen-CRED_GEMINI" class="screen">
+      <div class="screen-header">
+        <div class="lobsta-icon">&#x1F99E;</div>
+        <span class="step-badge" data-step="CRED_GEMINI"></span>
+        <h2>Google Gemini API Key</h2>
+      </div>
+      <div class="screen-body">
+        <div class="provider-card">
+          <p>Gemini is Google's AI &mdash; fast, affordable, and great at following instructions. It offers models from <strong>Nano</strong> (lightweight) to <strong>Flash</strong> (balanced) to <strong>Pro</strong> (most capable). Your bot uses it alongside Claude and GPT for different tasks.</p>
+        </div>
+
+        <!-- Phase 1: Account setup -->
+        <div id="gemini-phase1" class="phase">
+          <div class="card">
+            <h3>Step 1: Set up API access</h3>
+            <p>You probably have a Google account already &mdash; but you still need to enable API access through Google AI Studio.</p>
+            <ol class="step-guide">
+              <li>
+                <span class="step-text">Open Google AI Studio and sign in with your Google account</span>
+                <a href="https://aistudio.google.com" target="_blank" class="btn-external">Open Google AI Studio</a>
+              </li>
+              <li><span class="step-text">Accept the API terms of service</span></li>
+              <li><span class="step-text">Optionally: set up billing for higher rate limits (Settings &rarr; Billing)</span></li>
+            </ol>
+            <p class="note">Gemini has a free tier that works for personal use. Paid tier gives faster responses and higher limits.</p>
+          </div>
+          <div class="card cost-card">
+            <h3>Estimated monthly spend</h3>
+            <ul class="cost-list">
+              <li><strong>Free tier</strong>: $0/month &mdash; 15 requests/minute, works for casual use</li>
+              <li><strong>Light paid use</strong>: ~$2-5/month</li>
+              <li><strong>Regular use</strong>: ~$5-15/month</li>
+              <li><strong>Heavy use</strong>: ~$15-30/month</li>
+            </ul>
+          </div>
+          <div class="screen-footer">
+            <button class="btn-primary phase-next" data-provider="gemini" data-phase="2">I'm Set Up</button>
+          </div>
+        </div>
+
+        <!-- Phase 2: Spend limit -->
+        <div id="gemini-phase2" class="phase hidden">
+          <div class="card">
+            <h3>Step 2: Set a spend limit</h3>
+            <p>If you enabled billing, set a budget. If you're on the free tier, skip this.</p>
+            <ol class="step-guide">
+              <li>
+                <span class="step-text">Open Google Cloud billing budgets</span>
+                <a href="https://console.cloud.google.com/billing/budgets" target="_blank" class="btn-external">Open Billing Budgets</a>
+              </li>
+              <li><span class="step-text">Create a budget &mdash; we recommend starting at <strong>$15/month</strong></span></li>
+            </ol>
+          </div>
+          <div class="screen-footer">
+            <div class="btn-group">
+              <button class="btn-primary phase-next" data-provider="gemini" data-phase="3">I've Set My Limit</button>
+              <button class="btn-secondary phase-next" data-provider="gemini" data-phase="3">I'm Using Free Tier</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 3: Key creation -->
+        <div id="gemini-phase3" class="phase hidden">
+          <div class="card">
+            <h3>Step 3: Create your API key</h3>
+            <ol class="step-guide">
+              <li>
+                <span class="step-text">Open the API Keys page</span>
+                <a href="https://aistudio.google.com/apikeys" target="_blank" class="btn-external">Open API Keys</a>
+              </li>
+              <li><span class="step-text">Click <strong>Create API Key</strong></span></li>
+              <li><span class="step-text">Select a Google Cloud project (or let it create one)</span></li>
+              <li><span class="step-text">Copy the key</span></li>
+            </ol>
+            <div class="key-input-group">
+              <label for="key-gemini">Paste your API key</label>
+              <div class="key-input-wrapper">
+                <input type="password" id="key-gemini" placeholder="AIza..." autocomplete="off">
+                <button class="btn-toggle-vis" data-target="key-gemini">Show</button>
+              </div>
+            </div>
+            <div id="gemini-status" class="validation-status"></div>
+          </div>
+          <div class="screen-footer">
+            <button id="btn-validate-gemini" class="btn-primary" data-provider="gemini">Validate Key</button>
+            <a href="#" id="btn-skip-gemini" class="skip-link">Skip Gemini for now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OpenAI -->
+    <div id="screen-CRED_OPENAI" class="screen">
+      <div class="screen-header">
+        <div class="lobsta-icon">&#x1F99E;</div>
+        <span class="step-badge" data-step="CRED_OPENAI"></span>
+        <h2>OpenAI API Key</h2>
+      </div>
+      <div class="screen-body">
+        <div class="provider-card">
+          <p>OpenAI makes <strong>GPT</strong> and <strong>DALL-E</strong>. GPT is great for general tasks and creative work, and DALL-E can generate images. A solid addition to your bot's toolkit.</p>
+        </div>
+
+        <!-- Phase 1: Account setup -->
+        <div id="openai-phase1" class="phase">
+          <div class="card">
+            <h3>Step 1: Set up API access</h3>
+            <p>Even if you use ChatGPT, the API is separate &mdash; it has its own billing and its own keys.</p>
+            <ol class="step-guide">
+              <li>
+                <span class="step-text">Open the OpenAI Platform and sign in</span>
+                <a href="https://platform.openai.com" target="_blank" class="btn-external">Open OpenAI Platform</a>
+              </li>
+              <li><span class="step-text">Go to <strong>Settings &rarr; Billing</strong> and add a payment method</span></li>
+              <li><span class="step-text">Add credit balance &mdash; we recommend starting with <strong>$10</strong></span></li>
+            </ol>
+            <p class="note">OpenAI API uses prepaid credits (separate from any ChatGPT Plus subscription). Your bot draws from this balance.</p>
+          </div>
+          <div class="card cost-card">
+            <h3>Estimated monthly spend</h3>
+            <ul class="cost-list">
+              <li><strong>Light use</strong> (a few GPT calls/day): ~$3-8/month</li>
+              <li><strong>Regular use</strong> (daily use, some image gen): ~$10-20/month</li>
+              <li><strong>Heavy use</strong> (lots of DALL-E, long conversations): ~$20-40/month</li>
+            </ul>
+          </div>
+          <div class="screen-footer">
+            <button class="btn-primary phase-next" data-provider="openai" data-phase="2">I'm Set Up</button>
+          </div>
+        </div>
+
+        <!-- Phase 2: Spend limit -->
+        <div id="openai-phase2" class="phase hidden">
+          <div class="card">
+            <h3>Step 2: Set a spend limit</h3>
+            <p>Set a monthly budget so your credits last.</p>
+            <ol class="step-guide">
+              <li>
+                <span class="step-text">Open your billing settings</span>
+                <a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" class="btn-external">Open Billing Settings</a>
+              </li>
+              <li><span class="step-text">Set a monthly budget limit &mdash; we recommend <strong>$20/month</strong></span></li>
+              <li><span class="step-text">Choose whether to enable auto-recharge (ON = uninterrupted, OFF = more control)</span></li>
+            </ol>
+          </div>
+          <div class="screen-footer">
+            <button class="btn-primary phase-next" data-provider="openai" data-phase="3">I've Set My Limit</button>
+          </div>
+        </div>
+
+        <!-- Phase 3: Key creation -->
+        <div id="openai-phase3" class="phase hidden">
+          <div class="card">
+            <h3>Step 3: Create your API key</h3>
+            <ol class="step-guide">
+              <li>
+                <span class="step-text">Open the API Keys page</span>
+                <a href="https://platform.openai.com/api-keys" target="_blank" class="btn-external">Open API Keys</a>
+              </li>
+              <li><span class="step-text">Click <strong>Create new secret key</strong></span></li>
+              <li><span class="step-text">Name it anything (e.g., "my-bot")</span></li>
+              <li><span class="step-text">Copy the key</span></li>
+            </ol>
+            <div class="key-input-group">
+              <label for="key-openai">Paste your API key</label>
+              <div class="key-input-wrapper">
+                <input type="password" id="key-openai" placeholder="sk-..." autocomplete="off">
+                <button class="btn-toggle-vis" data-target="key-openai">Show</button>
+              </div>
+            </div>
+            <div id="openai-status" class="validation-status"></div>
+          </div>
+          <div class="screen-footer">
+            <button id="btn-validate-openai" class="btn-primary" data-provider="openai">Validate Key</button>
+            <a href="#" id="btn-skip-openai" class="skip-link">Skip OpenAI for now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Telegram -->
     <div id="screen-CRED_TELEGRAM" class="screen">
       <div class="screen-header">
@@ -412,7 +593,7 @@
       </div>
       <div class="screen-body">
         <div class="card">
-          <p>Let's make your bot <em>yours</em>. One quick question, then we'll generate the draft.</p>
+          <p>Let's make your bot <em>yours</em>. I'll ask a few questions, one at a time.</p>
         </div>
         <div id="soul-interview-progress" class="interview-progress"></div>
         <div class="card" id="soul-question-card">
@@ -464,7 +645,7 @@
       </div>
       <div class="screen-body">
         <div class="card">
-          <p>One last quick question so your bot has the right context from day one.</p>
+          <p>Now let's help your bot understand <em>you</em> so it can actually be useful from day one.</p>
         </div>
         <div id="user-interview-progress" class="interview-progress"></div>
         <div class="card" id="user-question-card">

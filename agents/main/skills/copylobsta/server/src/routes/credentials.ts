@@ -9,7 +9,9 @@ const router = Router();
 
 /** Map provider names to credential fields and their next states. */
 const PROVIDER_MAP: Record<string, { field: string; nextState: SessionState }> = {
-  anthropic: { field: "anthropic", nextState: "CRED_TELEGRAM" },
+  anthropic: { field: "anthropic", nextState: "CRED_GEMINI" },
+  gemini: { field: "gemini", nextState: "CRED_OPENAI" },
+  openai: { field: "openai", nextState: "CRED_TELEGRAM" },
   telegram: { field: "telegramToken", nextState: "SOUL_INTERVIEW" },
 };
 

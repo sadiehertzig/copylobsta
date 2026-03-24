@@ -67,7 +67,8 @@ describe("canTransition", () => {
   it("walks the full happy path", () => {
     const happyPath = [
       "WELCOME", "AWS_ACCOUNT_CHECK", "AWS_LAUNCH", "INSTANCE_VERIFY",
-      "CRED_GITHUB", "CRED_ANTHROPIC", "CRED_TELEGRAM", "SOUL_INTERVIEW", "SOUL_REVIEW", "USER_INTERVIEW",
+      "CRED_GITHUB", "CRED_ANTHROPIC", "CRED_GEMINI", "CRED_OPENAI",
+      "CRED_TELEGRAM", "SOUL_INTERVIEW", "SOUL_REVIEW", "USER_INTERVIEW",
       "USER_REVIEW", "DEPLOY", "HANDSHAKE", "COMPLETE",
     ] as const;
 
@@ -106,7 +107,7 @@ describe("getStepNumber", () => {
   });
 
   it("returns correct step for SOUL_INTERVIEW", () => {
-    expect(getStepNumber("SOUL_INTERVIEW")).toBe(8);
+    expect(getStepNumber("SOUL_INTERVIEW")).toBe(10);
   });
 
   it("returns 0 for lateral states", () => {
@@ -117,7 +118,7 @@ describe("getStepNumber", () => {
 });
 
 describe("TOTAL_STEPS", () => {
-  it("equals 14 (happy path states)", () => {
-    expect(TOTAL_STEPS).toBe(14);
+  it("equals 16 (happy path states)", () => {
+    expect(TOTAL_STEPS).toBe(16);
   });
 });
