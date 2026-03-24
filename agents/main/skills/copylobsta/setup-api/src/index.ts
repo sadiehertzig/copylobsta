@@ -226,6 +226,48 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
 
       await writeFile(envPath, envContent, "utf-8");
       console.log("Configured .env with API keys from Secrets Manager");
+
+      const extraSkillsDir = resolve(repoDir, "agents", "main", "skills");
+      if (!existsSync(extraSkillsDir)) {
+        throw new Error(`Skills directory not found at ${extraSkillsDir}`);
+      }
+
+      const cfgEnv = {
+        ...process.env,
+        PATH: `/home/openclaw/.npm-global/bin:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
+      };
+
+      let existingExtraDirs: string[] = [];
+      try {
+        const raw = execFileSync(
+          "openclaw",
+          ["config", "get", "skills.load.extraDirs"],
+          { timeout: 5_000, stdio: "pipe", env: cfgEnv },
+        ).toString().trim();
+
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw) as unknown;
+            if (Array.isArray(parsed)) {
+              existingExtraDirs = parsed.filter((v): v is string => typeof v === "string");
+            } else if (typeof parsed === "string") {
+              existingExtraDirs = [parsed];
+            }
+          } catch {
+            existingExtraDirs = [raw];
+          }
+        }
+      } catch {
+        // Missing path is fine; we'll write it below.
+      }
+
+      const mergedExtraDirs = Array.from(new Set([...existingExtraDirs, extraSkillsDir]));
+      execFileSync(
+        "openclaw",
+        ["config", "set", "skills.load.extraDirs", JSON.stringify(mergedExtraDirs)],
+        { timeout: 10_000, stdio: "pipe", env: cfgEnv },
+      );
+      console.log(`Configured skills.load.extraDirs with ${extraSkillsDir}`);
     });
 
     await runDeployStep("start_pm2", async () => {
@@ -283,10 +325,8 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
       await new Promise((r) => setTimeout(r, 3000));
       execFileSync(
         "bash",
-        ["-lc",
-        "curl -sf http://localhost:18789/healthz",
-        ],
-        { timeout: 10_000, stdio: "pipe" }
+        ["-lc", "for i in {1..10}; do curl -sf http://localhost:18789/healthz && exit 0; sleep 2; done; exit 1"],
+        { timeout: 30_000, stdio: "pipe" }
       );
 
       // Verify the bot token actually works against Telegram's API.
