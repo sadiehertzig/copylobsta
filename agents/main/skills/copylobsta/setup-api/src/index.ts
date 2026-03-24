@@ -329,11 +329,56 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
 
     await runDeployStep("health_check", async () => {
       await new Promise((r) => setTimeout(r, 3000));
-      execFileSync(
-        "bash",
-        ["-lc", "for i in {1..10}; do curl -sf http://localhost:18789/healthz && exit 0; sleep 2; done; exit 1"],
-        { timeout: 30_000, stdio: "pipe" }
-      );
+      let healthOk = false;
+      let lastCurlError = "";
+      for (let attempt = 1; attempt <= 30; attempt += 1) {
+        try {
+          execFileSync(
+            "curl",
+            ["-sf", "--max-time", "2", "http://localhost:18789/healthz"],
+            { timeout: 5_000, stdio: "pipe" },
+          );
+          healthOk = true;
+          break;
+        } catch (curlErr: unknown) {
+          const out = (curlErr as { stderr?: Buffer; stdout?: Buffer }).stderr?.toString().trim()
+            || (curlErr as { stdout?: Buffer }).stdout?.toString().trim()
+            || "curl exited non-zero";
+          lastCurlError = out;
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+      if (!healthOk) {
+        const uid = execFileSync("id", ["-u"], { stdio: "pipe" }).toString().trim();
+        const env = {
+          ...process.env,
+          PATH: `/home/openclaw/.npm-global/bin:${process.env.PATH || "/usr/local/bin:/usr/bin:/bin"}`,
+          XDG_RUNTIME_DIR: `/run/user/${uid}`,
+        };
+        let status = "unknown";
+        let logs = "";
+        try {
+          status = execFileSync(
+            "systemctl", ["--user", "is-active", "openclaw-gateway"],
+            { timeout: 5_000, stdio: "pipe", env },
+          ).toString().trim();
+        } catch (statusErr: unknown) {
+          status = (statusErr as { stdout?: Buffer }).stdout?.toString().trim() || "failed";
+        }
+        try {
+          logs = execFileSync(
+            "journalctl", ["--user", "-u", "openclaw-gateway", "-n", "50", "--no-pager"],
+            { timeout: 8_000, stdio: "pipe", env },
+          ).toString();
+        } catch {
+          logs = "(unable to read openclaw-gateway logs)";
+        }
+        throw new Error(
+          `Gateway health check failed after 60s on http://localhost:18789/healthz. `
+          + `Last curl error: ${lastCurlError || "unknown"}. `
+          + `Service status: ${status}. Recent logs:\n${logs}`,
+        );
+      }
 
       // Verify the bot token actually works against Telegram's API.
       const token = await readSecret("telegram");
