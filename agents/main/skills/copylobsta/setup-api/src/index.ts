@@ -268,6 +268,61 @@ app.post("/setup/deploy", requireToken, async (req, res) => {
         { timeout: 10_000, stdio: "pipe", env: cfgEnv },
       );
       console.log(`Configured skills.load.extraDirs with ${extraSkillsDir}`);
+
+      // Avoid manual pairing prompts after deploy by pre-authorizing the
+      // onboarding user's Telegram DM in allowlist mode.
+      if (chatId) {
+        const ownerChatId = String(chatId).trim();
+        if (ownerChatId) {
+          const readAllowFrom = (path: string): string[] => {
+            try {
+              const raw = execFileSync(
+                "openclaw",
+                ["config", "get", path],
+                { timeout: 5_000, stdio: "pipe", env: cfgEnv },
+              ).toString().trim();
+              if (!raw) return [];
+              try {
+                const parsed = JSON.parse(raw) as unknown;
+                if (Array.isArray(parsed)) return parsed.map((v) => String(v).trim()).filter(Boolean);
+                return [String(parsed).trim()].filter(Boolean);
+              } catch {
+                return [raw].map((v) => String(v).trim()).filter(Boolean);
+              }
+            } catch {
+              return [];
+            }
+          };
+
+          const mergedAllowFrom = Array.from(new Set([
+            ...readAllowFrom("channels.telegram.allowFrom"),
+            ...readAllowFrom("channels.telegram.accounts.default.allowFrom"),
+            ownerChatId,
+          ]));
+
+          execFileSync(
+            "openclaw",
+            ["config", "set", "channels.telegram.allowFrom", JSON.stringify(mergedAllowFrom)],
+            { timeout: 10_000, stdio: "pipe", env: cfgEnv },
+          );
+          execFileSync(
+            "openclaw",
+            ["config", "set", "channels.telegram.accounts.default.allowFrom", JSON.stringify(mergedAllowFrom)],
+            { timeout: 10_000, stdio: "pipe", env: cfgEnv },
+          );
+          execFileSync(
+            "openclaw",
+            ["config", "set", "channels.telegram.dmPolicy", "allowlist"],
+            { timeout: 10_000, stdio: "pipe", env: cfgEnv },
+          );
+          execFileSync(
+            "openclaw",
+            ["config", "set", "channels.telegram.accounts.default.dmPolicy", "allowlist"],
+            { timeout: 10_000, stdio: "pipe", env: cfgEnv },
+          );
+          console.log(`Configured Telegram DM allowlist for owner chat ${ownerChatId}`);
+        }
+      }
     });
 
     await runDeployStep("start_pm2", async () => {
